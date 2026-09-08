@@ -68,6 +68,7 @@
             font-weight: 800; text-transform: uppercase; letter-spacing: 1px;
             box-shadow: 0 0 16px rgba(255, 215, 0, 0.45); z-index: 30; pointer-events: none;
             transition: all 0.25s ease-out; opacity: 0; transform: translate(-50%, -50%) scale(0.85);
+            text-align: center;
         }
         #hud-status.show { opacity: 1; transform: translate(-50%, -50%) scale(1); }
 
@@ -315,8 +316,8 @@
             <div id="room-join-view">
                 <input type="text" id="room-code-input" class="room-input" placeholder="ROOM CODE (e.g. 1234)" maxlength="6">
                 <div style="display:flex; gap:6px;">
-                    <button class="bid-action-btn" onclick="joinOnlineRoom(false)">JOIN ROOM</button>
-                    <button class="bid-action-btn" style="background:#27ae60;" onclick="joinOnlineRoom(true)">CREATE ROOM</button>
+                    <button class="bid-action-btn" id="btn-join" onclick="joinOnlineRoom(false)">JOIN ROOM</button>
+                    <button class="bid-action-btn" id="btn-create" style="background:#27ae60;" onclick="joinOnlineRoom(true)">CREATE ROOM</button>
                 </div>
             </div>
             <div id="room-lobby-view" style="display:none;">
@@ -389,10 +390,11 @@
     </div>
 
     <script>
-        // Render থেকে প্রাপ্ত লাইভ ব্যাকএন্ড সার্ভার লিংক
+        // আপনার লাইভ ব্যাকএন্ড সার্ভার লিংক
         const SERVER_URL = "https://call-break-edad.onrender.com";
         let socket = null;
         let isOnline = false;
+        let isServerReady = false;
         let mySeat = 0;
         let currentRoomId = null;
 
@@ -442,20 +444,50 @@
             const el = document.getElementById('hud-status');
             el.innerText = text;
             el.classList.add('show');
-            if (!isPermanent) setTimeout(() => el.classList.remove('show'), 1500);
+            if (!isPermanent) setTimeout(() => el.classList.remove('show'), 2000);
         }
 
+        /* ------------------ অটো-ওয়েকআপ ও ব্যাকগ্রাউন্ড পিং ------------------ */
+        function wakeUpServer() {
+            fetch(SERVER_URL, { mode: 'no-cors' })
+                .then(() => {
+                    isServerReady = true;
+                    console.log("Server is awake & ready.");
+                })
+                .catch(() => console.log("Waking server up..."));
+        }
+        // পেজ খুললেই স্বয়ংক্রিয়ভাবে পিং করবে এবং প্রতি ৫ মিনিটে ঘুম ভাঙিয়ে রাখবে
+        wakeUpServer();
+        setInterval(wakeUpServer, 300000);
+
         /* ------------------ মাল্টিপ্লেয়ার রুম কানেকশন ------------------ */
-        function initSocket() {
+        function initSocket(callback) {
             if (!socket) {
-                socket = io(SERVER_URL);
+                setHUD("Connecting to server...", true);
+
+                socket = io(SERVER_URL, {
+                    transports: ['websocket', 'polling'],
+                    timeout: 45000
+                });
+
+                socket.on('connect', () => {
+                    isServerReady = true;
+                    setHUD("Connected to Server!");
+                    if (callback) callback();
+                });
+
+                socket.on('connect_error', () => {
+                    setHUD("Server waking up... please wait", true);
+                });
 
                 socket.on('roomUpdate', (players) => {
                     const listEl = document.getElementById('lobby-players');
-                    listEl.innerHTML = '';
-                    players.forEach((p, idx) => {
-                        listEl.innerHTML += `<div class="lobby-p-item"><span>Seat ${idx+1}: ${p.name}</span> <span style="color:#2ecc71;">Ready</span></div>`;
-                    });
+                    if (listEl) {
+                        listEl.innerHTML = '';
+                        players.forEach((p, idx) => {
+                            listEl.innerHTML += `<div class="lobby-p-item"><span>Seat ${idx+1}: ${p.name}</span> <span style="color:#2ecc71;">Ready</span></div>`;
+                        });
+                    }
                 });
 
                 socket.on('gameStart', ({ seat, hand, players }) => {
@@ -482,6 +514,14 @@
                         animateCardDrop(visualIdx, card, null);
                     }
                 });
+            } else if (socket.connected) {
+                if (callback) callback();
+            } else {
+                setHUD("Connecting to server...", true);
+                socket.connect();
+                socket.once('connect', () => {
+                    if (callback) callback();
+                });
             }
         }
 
@@ -489,26 +529,39 @@
             return (serverSeat - mySeat + 4) % 4;
         }
 
-        function getServerSeat(visualIdx) {
-            return (visualIdx + mySeat) % 4;
-        }
-
         function openRoomModal() {
             document.getElementById('room-modal').style.display = 'flex';
         }
 
         function joinOnlineRoom(isCreate) {
-            initSocket();
             let code = document.getElementById('room-code-input').value.trim();
             if (isCreate) code = Math.floor(1000 + Math.random() * 9000).toString();
             if (!code) return alert("রুম কোড দিন!");
 
             currentRoomId = code;
-            document.getElementById('display-room-code').innerText = currentRoomId;
-            document.getElementById('room-join-view').style.display = 'none';
-            document.getElementById('room-lobby-view').style.display = 'block';
 
-            socket.emit('joinRoom', { roomId: currentRoomId, playerName: "Player " + Math.floor(Math.random()*100) });
+            const btnJoin = document.getElementById('btn-join');
+            const btnCreate = document.getElementById('btn-create');
+            btnJoin.disabled = true;
+            btnCreate.disabled = true;
+            btnJoin.innerText = "Connecting...";
+            btnCreate.innerText = "Connecting...";
+
+            initSocket(() => {
+                btnJoin.disabled = false;
+                btnCreate.disabled = false;
+                btnJoin.innerText = "JOIN ROOM";
+                btnCreate.innerText = "CREATE ROOM";
+
+                document.getElementById('display-room-code').innerText = currentRoomId;
+                document.getElementById('room-join-view').style.display = 'none';
+                document.getElementById('room-lobby-view').style.display = 'block';
+
+                socket.emit('joinRoom', { 
+                    roomId: currentRoomId, 
+                    playerName: "Player " + Math.floor(Math.random()*100) 
+                });
+            });
         }
 
         function leaveRoom() {
