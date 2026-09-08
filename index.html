@@ -1,0 +1,922 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Call Break Championship</title>
+    <style>
+        :root {
+            --bg-felt: #0d5f38;
+            --pad-bg: #102626;
+            --tile-bg: linear-gradient(180deg, #2a8da4 0%, #154c5e 100%);
+            --tile-active: linear-gradient(180deg, #38c8ea 0%, #1c738f 100%);
+            --btn-gold: linear-gradient(180deg, #ecd58a 0%, #a88434 100%);
+            --gold: #ffd700;
+        }
+
+        * { 
+            box-sizing: border-box; margin: 0; padding: 0; 
+            font-family: 'Segoe UI', system-ui, sans-serif; user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        html, body { width: 100%; height: 100%; overflow: hidden; background: #05140d; }
+
+        #game-screen {
+            width: 100vw; height: 100dvh; max-width: 480px; margin: 0 auto;
+            background: radial-gradient(circle at 50% 45%, #188651 0%, var(--bg-felt) 70%, #06311b 100%);
+            position: relative; overflow: hidden; display: flex; flex-direction: column; justify-content: space-between;
+        }
+
+        /* Top Header */
+        .top-bar {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 8px 12px; z-index: 20; background: rgba(0,0,0,0.3);
+        }
+        .icon-btn-group { display: flex; gap: 6px; }
+        .circle-btn {
+            width: 36px; height: 36px; background: #bfa15f; border: 2px solid #ecd58a;
+            border-radius: 8px; display: flex; align-items: center; justify-content: center;
+            font-size: 16px; cursor: pointer; box-shadow: 0 2px 5px rgba(0,0,0,0.4);
+        }
+        .circle-btn:active { transform: scale(0.92); }
+
+        /* Center HUD Status Display */
+        #hud-status {
+            position: absolute; top: 32%; left: 50%; transform: translate(-50%, -50%);
+            background: rgba(4, 25, 15, 0.92); border: 2px solid var(--gold);
+            padding: 7px 18px; border-radius: 20px; color: #fff; font-size: 13px;
+            font-weight: 800; text-transform: uppercase; letter-spacing: 1px;
+            box-shadow: 0 0 16px rgba(255, 215, 0, 0.45); z-index: 30; pointer-events: none;
+            transition: all 0.25s ease-out; opacity: 0; transform: translate(-50%, -50%) scale(0.85);
+        }
+        #hud-status.show { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+
+        /* Player Modules */
+        .player-wrap {
+            position: absolute; display: flex; align-items: center; z-index: 10;
+            transition: all 0.3s;
+        }
+        .avatar-box { display: flex; flex-direction: column; align-items: center; position: relative; }
+        .avatar {
+            width: 44px; height: 44px; border-radius: 50%; background: #ffeaa7;
+            border: 2px solid #fff; display: flex; align-items: center; justify-content: center;
+            font-size: 22px; box-shadow: 0 3px 8px rgba(0,0,0,0.4);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .user-pod { width: 48px; height: 10px; background: #2d1840; border: 2px solid #a855f7; border-radius: 6px; margin-top: -5px; }
+        .speech-bubble {
+            background: #fff; color: #000; padding: 2px 7px; border-radius: 5px;
+            font-weight: 800; font-size: 10px; margin-bottom: 2px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+        .trick-indicator {
+            font-size: 10px; font-weight: 800; color: var(--gold);
+            background: rgba(0,0,0,0.6); padding: 1px 6px; border-radius: 4px; margin-top: 2px;
+        }
+
+        /* Turn Indicator */
+        .player-wrap.active-turn .avatar {
+            border-color: var(--gold);
+            box-shadow: 0 0 16px var(--gold), 0 0 25px #ff9900;
+            transform: scale(1.1);
+        }
+        .player-wrap.active-turn .speech-bubble { background: var(--gold); }
+
+        /* Positions */
+        #p-top { top: 46px; left: 50%; transform: translateX(-50%); flex-direction: column; }
+        #p-left { left: 8px; top: 44%; transform: translateY(-50%); flex-direction: column; }
+        #p-right { right: 8px; top: 44%; transform: translateY(-50%); flex-direction: column; }
+        #p-bottom { bottom: 135px; left: 50%; transform: translateX(-50%); flex-direction: column; }
+
+        .dealer-badge {
+            position: absolute; width: 18px; height: 18px; border-radius: 50%;
+            background: var(--gold); border: 1.5px solid #000; color: #000; font-size: 10px;
+            font-weight: 900; display: flex; align-items: center; justify-content: center;
+            bottom: -2px; right: -2px; z-index: 15;
+        }
+
+        /* Table Trick Slots */
+        #center-arena {
+            position: absolute; top: 48%; left: 50%;
+            transform: translate(-50%, -50%);
+            width: 250px; height: 250px;
+            pointer-events: none; z-index: 25;
+        }
+        .center-slot { position: absolute; width: 64px; height: 96px; }
+        #slot-0 { bottom: 8px; left: 50%; transform: translateX(-50%); }
+        #slot-1 { left: 6px; top: 50%; transform: translateY(-50%); }
+        #slot-2 { top: 8px; left: 50%; transform: translateX(-50%); }
+        #slot-3 { right: 6px; top: 50%; transform: translateY(-50%); }
+
+        /* কার্ডের গঠন ও লেআউট */
+        #player-hand {
+            width: 100%; height: 125px; display: flex;
+            justify-content: center; align-items: flex-end;
+            padding-bottom: 8px; z-index: 50; overflow: visible;
+        }
+
+        .card {
+            width: 64px; height: 96px; 
+            background: #ffffff !important; 
+            border: 2px solid #1a1a1a;
+            border-radius: 8px; 
+            margin-left: -32px; 
+            padding: 4px 5px; 
+            display: flex;
+            flex-direction: column; 
+            justify-content: space-between;
+            box-shadow: -3px 3px 10px rgba(0,0,0,0.65); 
+            cursor: pointer; 
+            position: relative;
+            transform-origin: bottom center; 
+            transition: transform 0.15s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.2s; 
+            flex-shrink: 0;
+            opacity: 1;
+        }
+        .card:first-child { margin-left: 0; }
+        .card:hover:not(.disabled), .card:active:not(.disabled) { 
+            transform: translateY(-28px) scale(1.08); 
+            z-index: 60; 
+            box-shadow: 0 14px 24px rgba(0,0,0,0.8), 0 0 8px rgba(255,215,0,0.9);
+            border-color: #ffd700;
+        }
+        
+        .card.disabled { 
+            opacity: 0.3 !important; 
+            filter: grayscale(0.8) brightness(0.65); 
+            cursor: not-allowed; 
+            pointer-events: none;
+        }
+        .card.bidding-visible {
+            opacity: 1 !important;
+            filter: none !important;
+            cursor: default;
+        }
+
+        .card.red { color: #d63031; }
+        .card.black { color: #111; }
+        
+        .c-corner { 
+            display: flex; flex-direction: column; align-items: center; 
+            line-height: 0.85; width: 16px; 
+        }
+        .c-val { font-size: 17px; font-weight: 900; letter-spacing: -0.5px; }
+        .c-suit-mini { font-size: 14px; font-weight: bold; margin-top: 1px; }
+        .c-center-art { 
+            position: absolute; top: 50%; left: 50%; 
+            transform: translate(-50%, -50%); 
+            font-size: 26px; opacity: 0.95; 
+        }
+        .c-corner.bot { transform: rotate(180deg); }
+
+        .fly-card {
+            position: fixed; z-index: 100; pointer-events: none; margin-left: 0 !important;
+            transition: all 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.2);
+        }
+
+        .sweep-card {
+            position: fixed; z-index: 100; pointer-events: none; margin-left: 0 !important;
+            transition: all 0.45s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* পূর্ণাঙ্গ ১-১৩ বিড প্যাড */
+        #bid-modal-container {
+            position: absolute; top: 48%; left: 50%; transform: translate(-50%, -50%);
+            width: 300px; background: var(--pad-bg); border: 2px solid #234b4b;
+            box-shadow: 0 10px 35px rgba(0,0,0,0.95); border-radius: 14px; padding: 14px;
+            z-index: 100; display: none; flex-direction: column; align-items: center;
+        }
+        .bid-grid-12 { 
+            display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; width: 100%; 
+        }
+        .bid-row-13 { 
+            display: flex; gap: 6px; width: 100%; margin-top: 6px; 
+        }
+        .bid-num-btn {
+            background: var(--tile-bg); border: 1px solid #439bb3; color: #fff;
+            font-size: 16px; font-weight: bold; height: 40px; border-radius: 6px;
+            display: flex; align-items: center; justify-content: center; cursor: pointer;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.4);
+        }
+        .bid-num-btn.selected { 
+            background: var(--tile-active); border: 2px solid #fff; 
+            box-shadow: 0 0 10px #38c8ea;
+        }
+        .bid-action-btn {
+            background: var(--btn-gold); border: 2px solid #fff; color: #3b2803;
+            font-size: 16px; font-weight: bold; flex-grow: 1; height: 40px; border-radius: 6px; cursor: pointer;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.5);
+        }
+
+        /* Modals */
+        .generic-modal {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            width: 90%; max-width: 320px; background: #18222d; border: 2px solid #bfa15f; border-radius: 12px;
+            padding: 14px; color: #fff; z-index: 200; display: none; flex-direction: column;
+        }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+        .modal-title { font-size: 15px; font-weight: bold; color: #ecd58a; }
+        .close-btn { font-size: 18px; cursor: pointer; color: #ccc; }
+        .score-table { width: 100%; border-collapse: collapse; font-size: 11px; margin-top: 6px; }
+        .score-table th, .score-table td { border: 1px solid #334e68; padding: 5px 2px; text-align: center; }
+        .score-table th { background: #243b53; color: #ecd58a; }
+
+        /* Settings Rows */
+        .settings-row {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.08); font-size: 13px;
+        }
+        .avatar-grid { display: flex; gap: 8px; justify-content: center; margin-top: 8px; }
+        .avatar-choice {
+            font-size: 26px; padding: 4px; border-radius: 50%; cursor: pointer;
+            border: 2px solid transparent; background: rgba(255,255,255,0.05);
+        }
+        .avatar-choice.selected { border-color: var(--gold); background: rgba(255,215,0,0.2); }
+
+        /* Podium */
+        #podium-modal {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(10, 15, 20, 0.96); z-index: 300; display: none;
+            flex-direction: column; align-items: center; justify-content: center;
+        }
+        .podium-box { display: flex; align-items: flex-end; justify-content: center; gap: 8px; margin-top: 24px; }
+        .pod-step { display: flex; flex-direction: column; align-items: center; border-radius: 6px 6px 0 0; width: 75px; }
+        .step-1 { height: 130px; background: linear-gradient(180deg, #ffd700, #b8860b); }
+        .step-2 { height: 95px; background: linear-gradient(180deg, #c0c0c0, #7f8c8d); }
+        .step-3 { height: 70px; background: linear-gradient(180deg, #cd7f32, #8b4513); }
+        .pod-rank { font-size: 20px; font-weight: 900; color: #111; margin-top: 6px; }
+        .pod-player { font-size: 11px; font-weight: bold; margin-bottom: 4px; color: #fff; text-align: center; }
+    </style>
+</head>
+<body>
+
+    <div id="game-screen">
+        <div class="top-bar">
+            <div class="icon-btn-group">
+                <div class="circle-btn" onclick="openScoreboardModal()">📊</div>
+                <div class="circle-btn" onclick="openHistoryModal()">📅</div>
+            </div>
+            <div style="font-size: 12px; font-weight: bold; color: var(--gold);" id="round-indicator">ROUND 1 (TARGET: 30)</div>
+            <div class="circle-btn" onclick="openSettingsModal()">⚙️</div>
+        </div>
+
+        <div id="hud-status">Starting Game...</div>
+
+        <!-- North (Bot 2) -->
+        <div class="player-wrap" id="p-top">
+            <div class="speech-bubble" id="bid-label-2">Bid: ?</div>
+            <div class="avatar-box">
+                <div class="avatar">👩‍🦰</div>
+                <div class="user-pod"></div>
+                <div class="dealer-badge" id="dealer-2" style="display:none;">D</div>
+            </div>
+            <div class="trick-indicator" id="trick-2">Won: 0</div>
+            <span style="font-size: 10px; color:#bbb;" id="score-2">Score: 0.0</span>
+        </div>
+
+        <!-- West (Bot 1) -->
+        <div class="player-wrap" id="p-left">
+            <div class="speech-bubble" id="bid-label-1">Bid: ?</div>
+            <div class="avatar-box">
+                <div class="avatar">👦</div>
+                <div class="user-pod"></div>
+                <div class="dealer-badge" id="dealer-1" style="display:none;">D</div>
+            </div>
+            <div class="trick-indicator" id="trick-1">Won: 0</div>
+            <span style="font-size: 10px; color:#bbb;" id="score-1">Score: 0.0</span>
+        </div>
+
+        <!-- East (Bot 3) -->
+        <div class="player-wrap" id="p-right">
+            <div class="speech-bubble" id="bid-label-3">Bid: ?</div>
+            <div class="avatar-box">
+                <div class="avatar">👩‍🦱</div>
+                <div class="user-pod"></div>
+                <div class="dealer-badge" id="dealer-3" style="display:none;">D</div>
+            </div>
+            <div class="trick-indicator" id="trick-3">Won: 0</div>
+            <span style="font-size: 10px; color:#bbb;" id="score-3">Score: 0.0</span>
+        </div>
+
+        <!-- Center Arena -->
+        <div id="center-arena">
+            <div id="slot-0" class="center-slot"></div>
+            <div id="slot-1" class="center-slot"></div>
+            <div id="slot-2" class="center-slot"></div>
+            <div id="slot-3" class="center-slot"></div>
+        </div>
+
+        <!-- South (You) -->
+        <div class="player-wrap" id="p-bottom">
+            <div class="speech-bubble" id="bid-label-0">Bid: ?</div>
+            <div class="avatar-box">
+                <div class="avatar" id="my-avatar">🧔</div>
+                <div class="user-pod" style="border-color: #f59e0b;"></div>
+                <div class="dealer-badge" id="dealer-0" style="display:none;">D</div>
+            </div>
+            <div class="trick-indicator" id="trick-0">Won: 0</div>
+            <span style="font-size: 10px; color:#bbb;" id="score-0">Score: 0.0</span>
+        </div>
+
+        <div id="player-hand"></div>
+
+        <!-- ১-১৩ ছাপা কল / বিড প্যাড -->
+        <div id="bid-modal-container">
+            <div style="font-size: 12px; color: #d1e7dd; margin-bottom: 8px; font-weight:bold;">SECRET BID (1-13)</div>
+            <div class="bid-grid-12">
+                <div class="bid-num-btn" onclick="selectBid(1, this)">1</div>
+                <div class="bid-num-btn" onclick="selectBid(2, this)">2</div>
+                <div class="bid-num-btn" onclick="selectBid(3, this)">3</div>
+                <div class="bid-num-btn" onclick="selectBid(4, this)">4</div>
+                <div class="bid-num-btn" onclick="selectBid(5, this)">5</div>
+                <div class="bid-num-btn" onclick="selectBid(6, this)">6</div>
+                <div class="bid-num-btn" onclick="selectBid(7, this)">7</div>
+                <div class="bid-num-btn" onclick="selectBid(8, this)">8</div>
+                <div class="bid-num-btn" onclick="selectBid(9, this)">9</div>
+                <div class="bid-num-btn" onclick="selectBid(10, this)">10</div>
+                <div class="bid-num-btn" onclick="selectBid(11, this)">11</div>
+                <div class="bid-num-btn" onclick="selectBid(12, this)">12</div>
+            </div>
+            <div class="bid-row-13">
+                <div class="bid-num-btn" style="width: 68px;" onclick="selectBid(13, this)">13</div>
+                <button class="bid-action-btn" onclick="confirmHumanBid()">CONFIRM BID</button>
+            </div>
+        </div>
+
+        <!-- Round Result Summary Modal (এখানে সবার আসল কল উন্মুক্ত হবে) -->
+        <div id="round-summary-modal" class="generic-modal">
+            <div class="modal-header">
+                <div class="modal-title" id="summary-title">ROUND SUMMARY</div>
+                <div class="close-btn" onclick="proceedToNextRound()">✖</div>
+            </div>
+            <table class="score-table">
+                <thead><tr><th>Player</th><th>Bid</th><th>Won</th><th>Round Pts</th><th>Total</th></tr></thead>
+                <tbody id="summary-body"></tbody>
+            </table>
+            <button class="bid-action-btn" style="margin-top: 12px;" onclick="proceedToNextRound()">NEXT ROUND</button>
+        </div>
+
+        <!-- Settings Modal -->
+        <div id="settings-modal" class="generic-modal">
+            <div class="modal-header">
+                <div class="modal-title">SETTINGS</div>
+                <div class="close-btn" onclick="closeModals()">✖</div>
+            </div>
+            <div class="settings-row">
+                <span>Sound Effects</span>
+                <input type="checkbox" id="cfg-sound" checked style="width: 18px; height: 18px;">
+            </div>
+            <div style="padding-top: 10px;">
+                <span style="font-size: 13px;">Choose Avatar:</span>
+                <div class="avatar-grid">
+                    <div class="avatar-choice selected" onclick="pickAvatar('🧔', this)">🧔</div>
+                    <div class="avatar-choice" onclick="pickAvatar('🤠', this)">🤠</div>
+                    <div class="avatar-choice" onclick="pickAvatar('🧕', this)">🧕</div>
+                    <div class="avatar-choice" onclick="pickAvatar('🤴', this)">🤴</div>
+                </div>
+            </div>
+            <button class="bid-action-btn" style="margin-top: 16px; background: #c0392b; color:#fff;" onclick="resetFullGame()">Restart Game</button>
+        </div>
+
+        <!-- History Modal -->
+        <div id="history-modal" class="generic-modal">
+            <div class="modal-header">
+                <div class="modal-title">7 DAYS HISTORY</div>
+                <div class="close-btn" onclick="closeModals()">✖</div>
+            </div>
+            <div style="max-height: 220px; overflow-y: auto;">
+                <table class="score-table">
+                    <thead><tr><th>Date</th><th>Result</th><th>Score</th><th>Rank</th></tr></thead>
+                    <tbody id="history-body"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Scoreboard Modal -->
+        <div id="score-modal" class="generic-modal">
+            <div class="modal-header">
+                <div class="modal-title">SCORE SHEET</div>
+                <div class="close-btn" onclick="closeModals()">✖</div>
+            </div>
+            <div style="max-height: 220px; overflow-y: auto;">
+                <table class="score-table">
+                    <thead><tr><th>R</th><th>You</th><th>Bot 1</th><th>Bot 2</th><th>Bot 3</th></tr></thead>
+                    <tbody id="round-score-body"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Podium Modal -->
+        <div id="podium-modal">
+            <div style="font-size: 24px; font-weight: 900; color: #ffd700;">CHAMPIONSHIP OVER!</div>
+            <div style="font-size: 13px; color: #fff; margin-top: 4px;" id="winner-announcement"></div>
+            <div class="podium-box">
+                <div class="pod-step step-2"><div class="pod-player" id="pod-p2">-</div><div class="pod-rank">2</div></div>
+                <div class="pod-step step-1"><div style="font-size: 20px;">👑</div><div class="pod-player" id="pod-p1">-</div><div class="pod-rank">1</div></div>
+                <div class="pod-step step-3"><div class="pod-player" id="pod-p3">-</div><div class="pod-rank">3</div></div>
+            </div>
+            <button class="bid-action-btn" style="margin-top: 30px; width: 160px; flex-grow: 0;" onclick="resetFullGame()">PLAY AGAIN</button>
+        </div>
+    </div>
+
+    <script>
+        const SUITS = ['♠', '♥', '♣', '♦'];
+        const VALUES = [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14];
+        const SUIT_COLORS = { '♠': 'black', '♣': 'black', '♥': 'red', '♦': 'red' };
+        const VALUE_NAMES = { 11: 'J', 12: 'Q', 13: 'K', 14: 'A' };
+        const COURT_ARTS = { 11: '⚔️', 12: '👑', 13: '🤴', 14: '★' };
+        const PLAYERS = ['You', 'Bot 1', 'Bot 2', 'Bot 3'];
+        const PLAYER_ELEMENT_IDS = ['p-bottom', 'p-left', 'p-top', 'p-right'];
+
+        let hands = [[], [], [], []];
+        let bids = [0, 0, 0, 0];
+        let tricks = [0, 0, 0, 0];
+        let totalScores = [0.0, 0.0, 0.0, 0.0];
+        let roundNumber = 1;
+        let dealerIndex = 0;
+        let currentTurn = 0;
+        let leadPlayer = 0;
+        let currentTrick = [];
+        let tempSelectedBid = 2;
+        let biddingTurn = 0;
+        let roundLogs = [];
+
+        // Web Audio Sound Engine
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        function playTone(freq, type, duration, gainVal = 0.08) {
+            if (!document.getElementById('cfg-sound').checked) return;
+            try {
+                if (audioCtx.state === 'suspended') audioCtx.resume();
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = type;
+                osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+                gain.gain.setValueAtTime(gainVal, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start();
+                osc.stop(audioCtx.currentTime + duration);
+            } catch(e){}
+        }
+
+        function playCardSnapSound() {
+            playTone(320, 'triangle', 0.08, 0.12);
+        }
+
+        function playTrickWinSound() {
+            playTone(523.25, 'sine', 0.1, 0.1);
+            setTimeout(() => playTone(659.25, 'sine', 0.18, 0.1), 100);
+        }
+
+        function setHUD(text, isPermanent = false) {
+            const el = document.getElementById('hud-status');
+            el.innerText = text;
+            el.classList.add('show');
+            if (!isPermanent) {
+                setTimeout(() => el.classList.remove('show'), 1500);
+            }
+        }
+
+        function startRound() {
+            closeModals();
+            document.getElementById('round-indicator').innerText = `ROUND ${roundNumber} (TARGET: 30)`;
+            
+            for (let i = 0; i < 4; i++) {
+                document.getElementById(`dealer-${i}`).style.display = (i === dealerIndex) ? 'flex' : 'none';
+                document.getElementById(`bid-label-${i}`).innerText = 'Bid: ?';
+                document.getElementById(`trick-${i}`).innerText = 'Won: 0';
+            }
+
+            let deck = [];
+            SUITS.forEach(s => VALUES.forEach(v => deck.push({ suit: s, val: v })));
+            deck.sort(() => Math.random() - 0.5);
+
+            for (let i = 0; i < 4; i++) {
+                hands[i] = deck.slice(i * 13, (i + 1) * 13);
+                sortHand(hands[i]);
+            }
+
+            tricks = [0, 0, 0, 0];
+            clearTableSlots();
+            renderPlayerHandDuringBidding();
+
+            biddingTurn = (dealerIndex + 1) % 4;
+            setHUD("Secret Bidding...", true);
+            setTimeout(processBiddingTurn, 700);
+        }
+
+        function sortHand(hand) {
+            const suitOrder = { '♠': 4, '♥': 3, '♣': 2, '♦': 1 };
+            hand.sort((a, b) => (suitOrder[b.suit] - suitOrder[a.suit]) || (b.val - a.val));
+        }
+
+        function createCardElement(card) {
+            const valLabel = VALUE_NAMES[card.val] || card.val;
+            const el = document.createElement('div');
+            el.className = `card ${SUIT_COLORS[card.suit]}`;
+            const centerSymbol = COURT_ARTS[card.val] || card.suit;
+            el.innerHTML = `
+                <div class="c-corner top"><span class="c-val">${valLabel}</span><span class="c-suit-mini">${card.suit}</span></div>
+                <div class="c-center-art">${centerSymbol}</div>
+                <div class="c-corner bot"><span class="c-val">${valLabel}</span><span class="c-suit-mini">${card.suit}</span></div>
+            `;
+            return el;
+        }
+
+        function updateTurnHighlight(activePlayer) {
+            for (let i = 0; i < 4; i++) {
+                const el = document.getElementById(PLAYER_ELEMENT_IDS[i]);
+                if (i === activePlayer) el.classList.add('active-turn');
+                else el.classList.remove('active-turn');
+            }
+        }
+
+        function renderPlayerHandDuringBidding() {
+            const container = document.getElementById('player-hand');
+            container.innerHTML = '';
+            hands[0].forEach(card => {
+                const cardEl = createCardElement(card);
+                cardEl.classList.add('bidding-visible');
+                container.appendChild(cardEl);
+            });
+        }
+
+        // ছাপা কল প্রসেস (কেউ কারো কল দেখতে পাবে না)
+        function processBiddingTurn() {
+            updateTurnHighlight(biddingTurn);
+
+            if (biddingTurn === 0) {
+                setHUD("Place Your Secret Bid", true);
+                document.getElementById('bid-modal-container').style.display = 'flex';
+                selectBid(2, document.querySelectorAll('.bid-num-btn')[1]);
+            } else {
+                setHUD(`${PLAYERS[biddingTurn]} is Bidding...`, true);
+                
+                // বট স্বতন্ত্রভাবে নিজের হাতের ওপর ভিত্তি করে ১-১৩ পর্যন্ত কল করতে পারে
+                let count = 0;
+                hands[biddingTurn].forEach(c => {
+                    if (c.suit === '♠' && c.val >= 10) count += 1;
+                    else if (c.val === 14) count += 0.8;
+                    else if (c.val === 13) count += 0.4;
+                });
+                bids[biddingTurn] = Math.max(1, Math.round(count));
+
+                // ছাপা কল: স্ক্রিনে কারো আসল বিড দেখা যাবে না
+                document.getElementById(`bid-label-${biddingTurn}`).innerText = `Bid: ?`;
+                advanceBidding();
+            }
+        }
+
+        function selectBid(num, el) {
+            tempSelectedBid = num;
+            document.querySelectorAll('.bid-num-btn').forEach(b => b.classList.remove('selected'));
+            el.classList.add('selected');
+        }
+
+        function confirmHumanBid() {
+            bids[0] = tempSelectedBid;
+            document.getElementById('bid-modal-container').style.display = 'none';
+            // কেবল ইউজার নিজের বিড দেখতে পাবে
+            document.getElementById('bid-label-0').innerText = `Bid: ${bids[0]}`;
+            advanceBidding();
+        }
+
+        function advanceBidding() {
+            if ((biddingTurn + 1) % 4 === (dealerIndex + 1) % 4) {
+                leadPlayer = (dealerIndex + 1) % 4;
+                currentTurn = leadPlayer;
+                setHUD(`${PLAYERS[currentTurn]} Leads!`);
+                setTimeout(playLoop, 600);
+            } else {
+                biddingTurn = (biddingTurn + 1) % 4;
+                setTimeout(processBiddingTurn, 450);
+            }
+        }
+
+        function renderPlayerHand(disableAll = false) {
+            const container = document.getElementById('player-hand');
+            container.innerHTML = '';
+            const validMoves = (!disableAll && currentTurn === 0) ? getValidMoves(hands[0], currentTrick) : [];
+
+            hands[0].forEach((card, idx) => {
+                const cardEl = createCardElement(card);
+                const isPlayable = !disableAll && currentTurn === 0 && validMoves.includes(card);
+                if (!isPlayable) {
+                    cardEl.classList.add('disabled');
+                } else {
+                    cardEl.onclick = () => humanPlayCard(idx, cardEl);
+                }
+                container.appendChild(cardEl);
+            });
+        }
+
+        // ট্রাম্প এবং ওভার-ট্রাম্প বাধ্যতামূলক রুল
+        function getValidMoves(hand, trick) {
+            if (trick.length === 0) return [...hand];
+
+            const leadCard = trick[0].card;
+            const sameSuitCards = hand.filter(c => c.suit === leadCard.suit);
+
+            if (sameSuitCards.length > 0) {
+                const hasTrumped = trick.some(t => t.card.suit === '♠' && leadCard.suit !== '♠');
+                if (hasTrumped) {
+                    return sameSuitCards; // ট্রাম্প হয়ে থাকলে ছোট-বড় যেকোনো লিড স্যুট কার্ড বৈধ
+                }
+                const highestInLead = Math.max(...trick.filter(t => t.card.suit === leadCard.suit).map(t => t.card.val));
+                const winningCards = sameSuitCards.filter(c => c.val > highestInLead);
+                return winningCards.length > 0 ? winningCards : sameSuitCards;
+            }
+
+            const spades = hand.filter(c => c.suit === '♠');
+            if (spades.length > 0) {
+                const trickSpades = trick.filter(t => t.card.suit === '♠');
+                if (trickSpades.length > 0) {
+                    const highestSpade = Math.max(...trickSpades.map(t => t.card.val));
+                    const higherSpades = spades.filter(c => c.val > highestSpade);
+                    if (higherSpades.length > 0) {
+                        return higherSpades; // ওভার-ট্রাম্প বাধ্যতামূলক
+                    }
+                    return [...hand];
+                } else {
+                    return spades; // ট্রাম্প বাধ্যতামূলক
+                }
+            }
+
+            return [...hand];
+        }
+
+        function playLoop() {
+            updateTurnHighlight(currentTurn);
+
+            if (currentTrick.length === 4) {
+                setTimeout(evaluateTrickWinner, 900);
+                return;
+            }
+
+            if (currentTurn === 0) {
+                setHUD("Your Turn!");
+                renderPlayerHand(false);
+            } else {
+                setHUD(`${PLAYERS[currentTurn]} Thinking...`, true);
+                renderPlayerHand(true);
+                setTimeout(aiPlayTurn, 700);
+            }
+        }
+
+        function humanPlayCard(idx, cardElement) {
+            const card = hands[0].splice(idx, 1)[0];
+            renderPlayerHand(true);
+            animateCardDrop(0, card, cardElement);
+        }
+
+        function aiPlayTurn() {
+            const hand = hands[currentTurn];
+            const valid = getValidMoves(hand, currentTrick);
+            let chosenCard;
+
+            if (currentTrick.length === 0) {
+                const nonSpades = valid.filter(c => c.suit !== '♠');
+                chosenCard = nonSpades.length > 0 ? nonSpades[nonSpades.length - 1] : valid[valid.length - 1];
+            } else {
+                const leadSuit = currentTrick[0].card.suit;
+                const canWin = valid.filter(c => c.suit === leadSuit || c.suit === '♠');
+                if (canWin.length > 0 && tricks[currentTurn] < bids[currentTurn]) {
+                    chosenCard = canWin[canWin.length - 1];
+                } else {
+                    chosenCard = valid[valid.length - 1];
+                }
+            }
+
+            hand.splice(hand.indexOf(chosenCard), 1);
+            animateCardDrop(currentTurn, chosenCard, null);
+        }
+
+        function animateCardDrop(player, card, sourceElement) {
+            playCardSnapSound();
+            const flyCard = createCardElement(card);
+            flyCard.classList.add('fly-card');
+            document.body.appendChild(flyCard);
+
+            let startX, startY;
+            if (sourceElement) {
+                const rect = sourceElement.getBoundingClientRect();
+                startX = rect.left;
+                startY = rect.top;
+            } else {
+                const pRect = document.getElementById(PLAYER_ELEMENT_IDS[player]).getBoundingClientRect();
+                startX = pRect.left + 10;
+                startY = pRect.top + 10;
+            }
+
+            flyCard.style.left = startX + 'px';
+            flyCard.style.top = startY + 'px';
+
+            const targetSlot = document.getElementById(`slot-${player}`);
+            const tRect = targetSlot.getBoundingClientRect();
+
+            flyCard.offsetHeight;
+            flyCard.style.left = tRect.left + 'px';
+            flyCard.style.top = tRect.top + 'px';
+
+            setTimeout(() => {
+                flyCard.remove();
+                targetSlot.innerHTML = '';
+                const landedCard = createCardElement(card);
+                landedCard.style.margin = '0';
+                targetSlot.appendChild(landedCard);
+
+                currentTrick.push({ player, card });
+                currentTurn = (currentTurn + 1) % 4;
+                playLoop();
+            }, 360);
+        }
+
+        function clearTableSlots() {
+            for (let i = 0; i < 4; i++) {
+                document.getElementById(`slot-${i}`).innerHTML = '';
+            }
+        }
+
+        function sweepTrickCardsToWinner(winner, callback) {
+            const winnerTarget = document.getElementById(PLAYER_ELEMENT_IDS[winner]).getBoundingClientRect();
+
+            for (let i = 0; i < 4; i++) {
+                const slot = document.getElementById(`slot-${i}`);
+                const cardEl = slot.querySelector('.card');
+                if (cardEl) {
+                    const rect = cardEl.getBoundingClientRect();
+                    const sweepCard = cardEl.cloneNode(true);
+                    sweepCard.className = 'card sweep-card';
+                    sweepCard.style.left = rect.left + 'px';
+                    sweepCard.style.top = rect.top + 'px';
+                    document.body.appendChild(sweepCard);
+
+                    slot.innerHTML = '';
+                    sweepCard.offsetHeight;
+                    sweepCard.style.left = (winnerTarget.left + 8) + 'px';
+                    sweepCard.style.top = (winnerTarget.top + 8) + 'px';
+                    sweepCard.style.transform = 'scale(0.2) rotate(15deg)';
+                    sweepCard.style.opacity = '0';
+
+                    setTimeout(() => sweepCard.remove(), 460);
+                }
+            }
+
+            setTimeout(callback, 500);
+        }
+
+        function evaluateTrickWinner() {
+            let winningPlay = currentTrick[0];
+            for (let i = 1; i < currentTrick.length; i++) {
+                const cur = currentTrick[i];
+                if (cur.card.suit === '♠' && winningPlay.card.suit !== '♠') winningPlay = cur;
+                else if (cur.card.suit === winningPlay.card.suit && cur.card.val > winningPlay.card.val) winningPlay = cur;
+            }
+
+            const winner = winningPlay.player;
+            tricks[winner]++;
+            document.getElementById(`trick-${winner}`).innerText = `Won: ${tricks[winner]}`;
+            playTrickWinSound();
+            setHUD(`${PLAYERS[winner]} Won Trick!`);
+
+            setTimeout(() => {
+                sweepTrickCardsToWinner(winner, () => {
+                    clearTableSlots();
+                    currentTrick = [];
+                    currentTurn = winner;
+
+                    if (hands[0].length > 0) {
+                        playLoop();
+                    } else {
+                        completeRound();
+                    }
+                });
+            }, 800);
+        }
+
+        function completeRound() {
+            let roundScoreDelta = [0, 0, 0, 0];
+            const tbody = document.getElementById('summary-body');
+            tbody.innerHTML = '';
+
+            for (let i = 0; i < 4; i++) {
+                if (tricks[i] >= bids[i]) {
+                    const extra = tricks[i] - bids[i];
+                    roundScoreDelta[i] = parseFloat((bids[i] + (extra * 0.1)).toFixed(1));
+                } else {
+                    roundScoreDelta[i] = -parseFloat(bids[i].toFixed(1));
+                }
+                totalScores[i] = parseFloat((totalScores[i] + roundScoreDelta[i]).toFixed(1));
+                document.getElementById(`score-${i}`).innerText = `Score: ${totalScores[i]}`;
+
+                // রাউন্ড সামারিতে সবার গোপন কল উন্মুক্ত হবে
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td><b>${PLAYERS[i]}</b></td>
+                    <td><b>${bids[i]}</b></td>
+                    <td>${tricks[i]}</td>
+                    <td style="color:${roundScoreDelta[i]>=0?'#48bb78':'#f56565'}; font-weight:bold;">
+                        ${roundScoreDelta[i]>=0 ? '+'+roundScoreDelta[i] : roundScoreDelta[i]}
+                    </td>
+                    <td><b>${totalScores[i]}</b></td>
+                `;
+                tbody.appendChild(tr);
+            }
+
+            roundLogs.push({ round: roundNumber, deltas: roundScoreDelta, totals: [...totalScores] });
+            updateScoreModalTable();
+
+            document.getElementById('summary-title').innerText = `ROUND ${roundNumber} SUMMARY`;
+            document.getElementById('round-summary-modal').style.display = 'flex';
+        }
+
+        function proceedToNextRound() {
+            document.getElementById('round-summary-modal').style.display = 'none';
+
+            const gameOver = totalScores.some(s => s >= 30.0);
+            if (gameOver) {
+                triggerGameOverPodium();
+            } else {
+                roundNumber++;
+                dealerIndex = (dealerIndex + 1) % 4;
+                startRound();
+            }
+        }
+
+        function updateScoreModalTable() {
+            const tbody = document.getElementById('round-score-body');
+            tbody.innerHTML = '';
+            roundLogs.forEach(log => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `<td>R${log.round}</td>` + log.deltas.map(d => `<td style="color:${d >= 0 ? '#48bb78':'#f56565'}; font-weight:bold;">${d >= 0 ? '+'+d : d}</td>`).join('');
+                tbody.appendChild(tr);
+            });
+        }
+
+        function triggerGameOverPodium() {
+            let ranked = [0, 1, 2, 3].map(i => ({ id: i, name: PLAYERS[i], score: totalScores[i] }));
+            ranked.sort((a, b) => b.score - a.score);
+
+            document.getElementById('pod-p1').innerText = `${ranked[0].name}\n(${ranked[0].score})`;
+            document.getElementById('pod-p2').innerText = `${ranked[1].name}\n(${ranked[1].score})`;
+            document.getElementById('pod-p3').innerText = `${ranked[2].name}\n(${ranked[2].score})`;
+
+            const myRank = ranked.findIndex(r => r.id === 0) + 1;
+            document.getElementById('winner-announcement').innerText = `Champion: ${ranked[0].name}! You finished #${myRank}.`;
+            document.getElementById('podium-modal').style.display = 'flex';
+            saveToWeeklyHistory(myRank, totalScores[0]);
+        }
+
+        function saveToWeeklyHistory(rank, score) {
+            let history = JSON.parse(localStorage.getItem('callbreak_history') || '[]');
+            const today = new Date().toISOString().split('T')[0];
+            history.unshift({ date: today, rank: rank + (rank===1?'st':rank===2?'nd':rank===3?'rd':'th'), score: score, isWin: rank === 1 });
+            const sevenDaysAgo = new Date();
+            sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+            history = history.filter(h => new Date(h.date) >= sevenDaysAgo);
+            localStorage.setItem('callbreak_history', JSON.stringify(history));
+        }
+
+        function openHistoryModal() {
+            const tbody = document.getElementById('history-body');
+            tbody.innerHTML = '';
+            let history = JSON.parse(localStorage.getItem('callbreak_history') || '[]');
+            if (history.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="4">No Records Found</td></tr>`;
+            } else {
+                history.forEach(h => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `<td>${h.date}</td><td style="color:${h.isWin?'#48bb78':'#f56565'}">${h.isWin ? 'WIN' : 'LOST'}</td><td>${h.score}</td><td>${h.rank}</td>`;
+                    tbody.appendChild(tr);
+                });
+            }
+            document.getElementById('history-modal').style.display = 'flex';
+        }
+
+        function openScoreboardModal() { document.getElementById('score-modal').style.display = 'flex'; }
+        function openSettingsModal() { document.getElementById('settings-modal').style.display = 'flex'; }
+        function closeModals() { document.querySelectorAll('.generic-modal').forEach(m => m.style.display = 'none'); }
+
+        function pickAvatar(emoji, el) {
+            document.querySelectorAll('.avatar-choice').forEach(a => a.classList.remove('selected'));
+            el.classList.add('selected');
+            document.getElementById('my-avatar').innerText = emoji;
+        }
+
+        function resetFullGame() {
+            totalScores = [0.0, 0.0, 0.0, 0.0];
+            roundNumber = 1;
+            dealerIndex = 0;
+            roundLogs = [];
+            for (let i = 0; i < 4; i++) document.getElementById(`score-${i}`).innerText = 'Score: 0.0';
+            document.getElementById('podium-modal').style.display = 'none';
+            closeModals();
+            startRound();
+        }
+
+        window.onload = startRound;
+    </script>
+</body>
+</html>
