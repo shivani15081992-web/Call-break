@@ -5,10 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Call Break Championship</title>
     
-    <!-- PWA কনফিগারেশন ও সার্ভিস ওয়ার্কার -->
+    <!-- PWA Configuration -->
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#0d5f38">
-    <link rel="apple-touch-icon" href="icon.png">
+    <link rel="apple-touch-icon" href="logo.png">
     <script>
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
@@ -39,6 +39,24 @@
             width: 100vw; height: 100dvh; max-width: 480px; margin: 0 auto;
             background: radial-gradient(circle at 50% 45%, #188651 0%, var(--bg-felt) 70%, #06311b 100%);
             position: relative; overflow: hidden; display: flex; flex-direction: column; justify-content: space-between;
+        }
+
+        /* সেন্ট্রাল ওয়াটারমার্ক লোগো */
+        #board-watermark {
+            position: absolute;
+            top: 48%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 250px;
+            height: 250px;
+            background-image: url('logo.png');
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
+            opacity: 0.16;
+            filter: drop-shadow(0 0 15px rgba(0,0,0,0.6));
+            pointer-events: none;
+            z-index: 5;
         }
 
         /* Top Header */
@@ -275,6 +293,9 @@
         </div>
 
         <div id="hud-status">Starting Game...</div>
+
+        <!-- সেন্ট্রাল ওয়াটারমার্ক লোগো এলিমেন্ট -->
+        <div id="board-watermark"></div>
 
         <!-- North (Bot 2) -->
         <div class="player-wrap" id="p-top">
@@ -573,7 +594,6 @@
                     else if (c.val === 13) count += 0.4;
                 });
                 bids[biddingTurn] = Math.max(1, Math.round(count));
-
                 document.getElementById(`bid-label-${biddingTurn}`).innerText = `Bid: ?`;
                 advanceBidding();
             }
