@@ -4,6 +4,19 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Call Break Championship</title>
+    
+    <!-- PWA কনফিগারেশন ও সার্ভিস ওয়ার্কার -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#0d5f38">
+    <link rel="apple-touch-icon" href="icon.png">
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js').catch(err => console.log('SW error:', err));
+            });
+        }
+    </script>
+
     <style>
         :root {
             --bg-felt: #0d5f38;
@@ -344,7 +357,7 @@
             </div>
         </div>
 
-        <!-- Round Result Summary Modal (এখানে সবার আসল কল উন্মুক্ত হবে) -->
+        <!-- Round Result Summary Modal -->
         <div id="round-summary-modal" class="generic-modal">
             <div class="modal-header">
                 <div class="modal-title" id="summary-title">ROUND SUMMARY</div>
@@ -543,7 +556,6 @@
             });
         }
 
-        // ছাপা কল প্রসেস (কেউ কারো কল দেখতে পাবে না)
         function processBiddingTurn() {
             updateTurnHighlight(biddingTurn);
 
@@ -554,7 +566,6 @@
             } else {
                 setHUD(`${PLAYERS[biddingTurn]} is Bidding...`, true);
                 
-                // বট স্বতন্ত্রভাবে নিজের হাতের ওপর ভিত্তি করে ১-১৩ পর্যন্ত কল করতে পারে
                 let count = 0;
                 hands[biddingTurn].forEach(c => {
                     if (c.suit === '♠' && c.val >= 10) count += 1;
@@ -563,7 +574,6 @@
                 });
                 bids[biddingTurn] = Math.max(1, Math.round(count));
 
-                // ছাপা কল: স্ক্রিনে কারো আসল বিড দেখা যাবে না
                 document.getElementById(`bid-label-${biddingTurn}`).innerText = `Bid: ?`;
                 advanceBidding();
             }
@@ -578,7 +588,6 @@
         function confirmHumanBid() {
             bids[0] = tempSelectedBid;
             document.getElementById('bid-modal-container').style.display = 'none';
-            // কেবল ইউজার নিজের বিড দেখতে পাবে
             document.getElementById('bid-label-0').innerText = `Bid: ${bids[0]}`;
             advanceBidding();
         }
@@ -612,7 +621,6 @@
             });
         }
 
-        // ট্রাম্প এবং ওভার-ট্রাম্প বাধ্যতামূলক রুল
         function getValidMoves(hand, trick) {
             if (trick.length === 0) return [...hand];
 
@@ -622,7 +630,7 @@
             if (sameSuitCards.length > 0) {
                 const hasTrumped = trick.some(t => t.card.suit === '♠' && leadCard.suit !== '♠');
                 if (hasTrumped) {
-                    return sameSuitCards; // ট্রাম্প হয়ে থাকলে ছোট-বড় যেকোনো লিড স্যুট কার্ড বৈধ
+                    return sameSuitCards;
                 }
                 const highestInLead = Math.max(...trick.filter(t => t.card.suit === leadCard.suit).map(t => t.card.val));
                 const winningCards = sameSuitCards.filter(c => c.val > highestInLead);
@@ -636,11 +644,11 @@
                     const highestSpade = Math.max(...trickSpades.map(t => t.card.val));
                     const higherSpades = spades.filter(c => c.val > highestSpade);
                     if (higherSpades.length > 0) {
-                        return higherSpades; // ওভার-ট্রাম্প বাধ্যতামূলক
+                        return higherSpades;
                     }
                     return [...hand];
                 } else {
-                    return spades; // ট্রাম্প বাধ্যতামূলক
+                    return spades;
                 }
             }
 
@@ -811,7 +819,6 @@
                 totalScores[i] = parseFloat((totalScores[i] + roundScoreDelta[i]).toFixed(1));
                 document.getElementById(`score-${i}`).innerText = `Score: ${totalScores[i]}`;
 
-                // রাউন্ড সামারিতে সবার গোপন কল উন্মুক্ত হবে
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
                     <td><b>${PLAYERS[i]}</b></td>
