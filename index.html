@@ -3,20 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Call Break Championship</title>
+    <title>Royal Card Club</title>
     
-    <!-- PWA Configuration -->
-    <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#0d5f38">
-    <link rel="apple-touch-icon" href="logo.png">
     <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
-    <script>
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('./sw.js').catch(err => console.log('SW error:', err));
-            });
-        }
-    </script>
 
     <style>
         :root {
@@ -30,16 +19,74 @@
 
         * { 
             box-sizing: border-box; margin: 0; padding: 0; 
-            font-family: 'Segoe UI', system-ui, sans-serif; user-select: none;
-            -webkit-tap-highlight-color: transparent;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; 
+            user-select: none; -webkit-tap-highlight-color: transparent;
         }
 
-        html, body { width: 100%; height: 100%; overflow: hidden; background: #05140d; }
+        html, body { 
+            width: 100%; height: 100%; min-height: 100%; 
+            background: #05140d !important; overflow: hidden; 
+        }
 
+        /* ১. মূল গেম মেনু লবি */
+        #lobby-screen {
+            width: 100%; height: 100%; max-width: 480px; margin: 0 auto;
+            background: radial-gradient(circle at 50% 30%, #188651 0%, #0d5f38 60%, #052414 100%);
+            display: flex; flex-direction: column; justify-content: space-between;
+            position: relative; z-index: 1000; overflow-y: auto; padding: 20px 16px;
+        }
+
+        .lobby-header {
+            text-align: center; margin-top: 10px; margin-bottom: 20px;
+        }
+        .lobby-logo {
+            width: 85px; height: 85px; object-fit: contain; margin-bottom: 6px;
+        }
+        .lobby-title {
+            font-size: 24px; font-weight: 900; color: var(--gold);
+            letter-spacing: 1px; text-shadow: 0 2px 6px rgba(0,0,0,0.8);
+        }
+        .lobby-subtitle {
+            font-size: 12px; color: #d1e7dd; font-weight: bold; margin-top: 2px;
+        }
+
+        .games-grid {
+            display: flex; flex-direction: column; gap: 12px; width: 100%;
+        }
+
+        .game-card {
+            background: linear-gradient(135deg, rgba(20, 55, 40, 0.95) 0%, rgba(10, 30, 20, 0.98) 100%);
+            border: 2px solid #ecd58a; border-radius: 14px; padding: 14px 16px;
+            display: flex; align-items: center; justify-content: space-between;
+            box-shadow: 0 6px 18px rgba(0,0,0,0.6); cursor: pointer;
+        }
+        .game-card:active { transform: scale(0.97); }
+
+        .card-info {
+            display: flex; align-items: center; gap: 14px;
+        }
+        .game-icon-box {
+            width: 48px; height: 48px; border-radius: 12px; background: rgba(0,0,0,0.5);
+            border: 1.5px solid var(--gold); display: flex; align-items: center; justify-content: center;
+            font-size: 24px;
+        }
+        .game-name {
+            font-size: 17px; font-weight: 900; color: #fff;
+        }
+        .game-desc {
+            font-size: 11px; color: #aaa; margin-top: 2px;
+        }
+        .play-tag {
+            background: var(--btn-gold); color: #2b1d03; font-size: 12px;
+            font-weight: 900; padding: 6px 14px; border-radius: 20px; border: 1.5px solid #fff;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+        }
+
+        /* ২. কল ব্রেক গেম স্ক্রিন */
         #game-screen {
-            width: 100vw; height: 100dvh; max-width: 480px; margin: 0 auto;
+            width: 100%; height: 100%; max-width: 480px; margin: 0 auto;
             background: radial-gradient(circle at 50% 45%, #188651 0%, var(--bg-felt) 70%, #06311b 100%);
-            position: relative; overflow: hidden; display: flex; flex-direction: column; justify-content: space-between;
+            position: relative; overflow: hidden; display: none; flex-direction: column; justify-content: space-between;
         }
 
         #board-watermark {
@@ -168,18 +215,14 @@
             background: var(--btn-gold); border: 2px solid #fff; color: #3b2803;
             font-size: 15px; font-weight: bold; flex-grow: 1; height: 42px; border-radius: 6px; cursor: pointer;
             display: flex; align-items: center; justify-content: center;
-            box-shadow: 0 3px 6px rgba(0,0,0,0.4);
-            pointer-events: auto !important;
+            box-shadow: 0 3px 6px rgba(0,0,0,0.4); pointer-events: auto !important;
         }
-        .bid-action-btn:active { transform: scale(0.96); }
 
-        /* মোডালগুলো যাতে সবার ওপরে সক্রিয় থাকে */
         .generic-modal {
             position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
             width: 90%; max-width: 330px; background: #18222d; border: 2px solid #bfa15f; border-radius: 12px;
             padding: 16px; color: #fff; z-index: 9999 !important; display: none; flex-direction: column;
-            box-shadow: 0 15px 50px rgba(0,0,0,0.9);
-            pointer-events: auto !important;
+            box-shadow: 0 15px 50px rgba(0,0,0,0.9); pointer-events: auto !important;
         }
         .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
         .modal-title { font-size: 15px; font-weight: bold; color: #ecd58a; }
@@ -193,12 +236,10 @@
         .avatar-choice { font-size: 26px; padding: 4px; border-radius: 50%; cursor: pointer; border: 2px solid transparent; background: rgba(255,255,255,0.05); }
         .avatar-choice.selected { border-color: var(--gold); background: rgba(255,215,0,0.2); }
 
-        /* Room Lobby Styles */
         .room-input {
             width: 100%; padding: 12px; border-radius: 6px; border: 1.5px solid #439bb3;
             background: #0b1a24; color: #fff; font-size: 16px; text-align: center;
             letter-spacing: 2px; text-transform: uppercase; margin-bottom: 12px;
-            pointer-events: auto !important;
         }
         .lobby-players-list {
             background: rgba(0,0,0,0.4); border-radius: 6px; padding: 8px; margin: 10px 0;
@@ -222,9 +263,81 @@
 </head>
 <body>
 
+    <!-- ১. মূল লবি মেনু -->
+    <div id="lobby-screen">
+        <div class="lobby-header">
+            <img src="logo.png" class="lobby-logo" alt="Logo" onerror="this.style.display='none'">
+            <div class="lobby-title">ROYAL CARD CLUB</div>
+            <div class="lobby-subtitle">SELECT YOUR FAVORITE CARD GAME</div>
+        </div>
+
+        <div class="games-grid">
+            <div class="game-card" onclick="launchGame('callbreak')">
+                <div class="card-info">
+                    <div class="game-icon-box">♠️</div>
+                    <div>
+                        <div class="game-name">Call Break</div>
+                        <div class="game-desc">Classic Trick-Taking Multiplayer</div>
+                    </div>
+                </div>
+                <div class="play-tag">PLAY</div>
+            </div>
+
+            <div class="game-card" onclick="launchGame('29.html')">
+                <div class="card-info">
+                    <div class="game-icon-box">👑</div>
+                    <div>
+                        <div class="game-name">29 Card Game</div>
+                        <div class="game-desc">Secret Trump & 28 Bid Battle</div>
+                    </div>
+                </div>
+                <div class="play-tag">PLAY</div>
+            </div>
+
+            <div class="game-card" onclick="launchGame('bridge.html')">
+                <div class="card-info">
+                    <div class="game-icon-box">🏆</div>
+                    <div>
+                        <div class="game-name">Bridge</div>
+                        <div class="game-desc">Auction, Dummy & Scoring</div>
+                    </div>
+                </div>
+                <div class="play-tag">PLAY</div>
+            </div>
+
+            <div class="game-card" onclick="launchGame('rummy.html')">
+                <div class="card-info">
+                    <div class="game-icon-box">🎴</div>
+                    <div>
+                        <div class="game-name">Indian Rummy</div>
+                        <div class="game-desc">13 Cards Pure Sequences & Sets</div>
+                    </div>
+                </div>
+                <div class="play-tag">PLAY</div>
+            </div>
+
+            <div class="game-card" onclick="launchGame('teenpatti.html')">
+                <div class="card-info">
+                    <div class="game-icon-box">🪙</div>
+                    <div>
+                        <div class="game-name">Teen Patti</div>
+                        <div class="game-desc">3 Cards Flash, Blind & Chaal</div>
+                    </div>
+                </div>
+                <div class="play-tag">PLAY</div>
+            </div>
+        </div>
+
+        <div style="text-align:center; font-size:11px; color:rgba(255,255,255,0.4); margin-top:15px;">
+            © 2026 Royal Card Club • Made for Bengal Card Lovers
+        </div>
+    </div>
+
+    <!-- ২. কল ব্রেক গেম বোর্ড -->
     <div id="game-screen">
         <div class="top-bar">
             <div class="icon-btn-group">
+                <div class="circle-btn" onclick="returnToLobby()" title="Main Menu">🏠</div>
                 <div class="circle-btn" onclick="openScoreboardModal()">📊</div>
                 <div class="circle-btn" onclick="openHistoryModal()">📅</div>
                 <div class="circle-btn" style="background:#2980b9; border-color:#5dade2;" onclick="openRoomModal()" title="Play Online">👥</div>
@@ -236,7 +349,6 @@
         <div id="hud-status">Starting Game...</div>
         <div id="board-watermark"></div>
 
-        <!-- North (Bot 2 / Player 2) -->
         <div class="player-wrap" id="p-top">
             <div class="speech-bubble" id="bid-label-2">Bid: ?</div>
             <div class="avatar-box">
@@ -248,7 +360,6 @@
             <span style="font-size: 10px; color:#bbb;" id="score-2">Score: 0.0</span>
         </div>
 
-        <!-- West (Bot 1 / Player 1) -->
         <div class="player-wrap" id="p-left">
             <div class="speech-bubble" id="bid-label-1">Bid: ?</div>
             <div class="avatar-box">
@@ -260,7 +371,6 @@
             <span style="font-size: 10px; color:#bbb;" id="score-1">Score: 0.0</span>
         </div>
 
-        <!-- East (Bot 3 / Player 3) -->
         <div class="player-wrap" id="p-right">
             <div class="speech-bubble" id="bid-label-3">Bid: ?</div>
             <div class="avatar-box">
@@ -279,7 +389,6 @@
             <div id="slot-3" class="center-slot"></div>
         </div>
 
-        <!-- South (You) -->
         <div class="player-wrap" id="p-bottom">
             <div class="speech-bubble" id="bid-label-0">Bid: ?</div>
             <div class="avatar-box">
@@ -293,7 +402,6 @@
 
         <div id="player-hand"></div>
 
-        <!-- বিড প্যাড -->
         <div id="bid-modal-container">
             <div style="font-size: 12px; color: #d1e7dd; margin-bottom: 8px; font-weight:bold;">SECRET BID (1-13)</div>
             <div class="bid-grid-12">
@@ -316,7 +424,6 @@
             </div>
         </div>
 
-        <!-- মাল্টিপ্লেয়ার রুম মোডাল -->
         <div id="room-modal" class="generic-modal">
             <div class="modal-header">
                 <div class="modal-title">ONLINE MULTIPLAYER ROOM</div>
@@ -337,7 +444,6 @@
             </div>
         </div>
 
-        <!-- Round Summary -->
         <div id="round-summary-modal" class="generic-modal">
             <div class="modal-header">
                 <div class="modal-title" id="summary-title">ROUND SUMMARY</div>
@@ -350,7 +456,6 @@
             <button class="bid-action-btn" style="margin-top: 12px; width:100%;" onclick="proceedToNextRound()">NEXT ROUND</button>
         </div>
 
-        <!-- Settings -->
         <div id="settings-modal" class="generic-modal">
             <div class="modal-header">
                 <div class="modal-title">SETTINGS</div>
@@ -399,6 +504,22 @@
     </div>
 
     <script>
+        function launchGame(target) {
+            if (target === 'callbreak') {
+                document.getElementById('lobby-screen').style.display = 'none';
+                document.getElementById('game-screen').style.display = 'flex';
+                startRound();
+            } else {
+                window.location.href = target;
+            }
+        }
+
+        function returnToLobby() {
+            closeModals();
+            document.getElementById('game-screen').style.display = 'none';
+            document.getElementById('lobby-screen').style.display = 'flex';
+        }
+
         const SERVER_URL = "https://call-break-edad.onrender.com";
         let socket = null;
         let isOnline = false;
@@ -455,14 +576,12 @@
             if (!isPermanent) setTimeout(() => el.classList.remove('show'), 2000);
         }
 
-        // ব্যাকগ্রাউন্ড সার্ভার অ্যাক্টিভেটর
         function wakeUpServer() {
             fetch(SERVER_URL, { mode: 'no-cors' }).catch(() => {});
         }
         wakeUpServer();
         setInterval(wakeUpServer, 240000);
 
-        /* ------------------ মাল্টিপ্লেয়ার কানেকশন ------------------ */
         function initSocket(callback) {
             if (socket && socket.connected) {
                 if (callback) callback();
@@ -488,7 +607,7 @@
                     isConnecting = false;
                     resetRoomButtons();
                     setHUD("Server waking up... please wait", false);
-                    alert("সার্ভার প্রস্তুত হতে ৩০-৪০ সেকেন্ড সময় নিচ্ছে। ১ মিনিট পর আবার চেষ্টা করুন।");
+                    alert("সার্ভার প্রস্তুত হতে ৩০-৪০ সেকেন্ড সময় নিচ্ছে। একটু পর আবার চেষ্টা করুন।");
                 });
 
                 socket.on('roomUpdate', (players) => {
@@ -590,7 +709,6 @@
             resetFullGame();
         }
 
-        /* ------------------ গেম লুপ ------------------ */
         function startRound() {
             closeModals();
             document.getElementById('round-indicator').innerText = `ROUND ${roundNumber} (OFFLINE AI)`;
@@ -1036,8 +1154,6 @@
             closeModals();
             startRound();
         }
-
-        window.onload = startRound;
     </script>
 </body>
 </html>
