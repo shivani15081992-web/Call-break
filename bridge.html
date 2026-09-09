@@ -1,0 +1,823 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Contract Bridge Championship</title>
+    <style>
+        :root {
+            --bg-felt: #0c4d2d;
+            --felt-light: #188651;
+            --gold: #f59e0b;
+            --gold-bright: #ffd700;
+            --pad-bg: #102626;
+            --tile-bg: linear-gradient(180deg, #2a8da4 0%, #154c5e 100%);
+            --tile-active: linear-gradient(180deg, #38c8ea 0%, #1c738f 100%);
+            --btn-gold: linear-gradient(180deg, #ecd58a 0%, #a88434 100%);
+        }
+
+        * {
+            box-sizing: border-box; margin: 0; padding: 0;
+            font-family: 'Segoe UI', system-ui, sans-serif; user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        html, body { width: 100%; height: 100%; overflow: hidden; background: #05140d; }
+
+        #game-screen {
+            width: 100vw; height: 100dvh; max-width: 480px; margin: 0 auto;
+            background: radial-gradient(circle at 50% 45%, var(--felt-light) 0%, var(--bg-felt) 70%, #06311b 100%);
+            position: relative; overflow: hidden; display: flex; flex-direction: column; justify-content: space-between;
+        }
+
+        #board-watermark {
+            position: absolute; top: 48%; left: 50%; transform: translate(-50%, -50%);
+            width: 250px; height: 250px; background-image: url('logo.png');
+            background-size: contain; background-repeat: no-repeat; background-position: center;
+            opacity: 0.16; pointer-events: none; z-index: 1;
+        }
+
+        /* Top Header */
+        .top-bar {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 8px 12px; z-index: 50;
+            background: linear-gradient(180deg, rgba(0,0,0,0.65) 0%, rgba(0,0,0,0.1) 100%);
+        }
+        .icon-btn-group { display: flex; gap: 6px; }
+        .circle-btn {
+            width: 36px; height: 36px; background: #bfa15f; border: 2px solid #ecd58a;
+            border-radius: 8px; display: flex; align-items: center; justify-content: center;
+            font-size: 16px; cursor: pointer; box-shadow: 0 2px 5px rgba(0,0,0,0.4);
+        }
+        .circle-btn:active { transform: scale(0.92); }
+
+        .team-pill {
+            background: rgba(10, 25, 18, 0.9); border: 1.5px solid var(--gold);
+            padding: 4px 10px; border-radius: 18px; font-size: 11px; font-weight: bold;
+            color: #fff; box-shadow: 0 4px 10px rgba(0,0,0,0.4);
+            display: flex; flex-direction: column; align-items: center; line-height: 1.1;
+        }
+        .team-pill b { font-size: 14px; color: var(--gold-bright); text-shadow: 0 0 8px rgba(255,215,0,0.6); }
+
+        #hud-status {
+            position: absolute; top: 32%; left: 50%; transform: translate(-50%, -50%);
+            background: rgba(4, 25, 15, 0.94); border: 2px solid var(--gold);
+            padding: 7px 18px; border-radius: 20px; color: #fff; font-size: 13px;
+            font-weight: 800; text-transform: uppercase; letter-spacing: 1px;
+            box-shadow: 0 0 16px rgba(255, 215, 0, 0.45); z-index: 30; pointer-events: none;
+            transition: all 0.25s ease-out; opacity: 0; transform: translate(-50%, -50%) scale(0.85);
+            text-align: center;
+        }
+        #hud-status.show { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+
+        /* Contract Display Badge */
+        #contract-box {
+            position: absolute; top: 58px; right: 14px; z-index: 45;
+            background: rgba(10, 25, 18, 0.95); border: 2px solid var(--gold);
+            border-radius: 8px; padding: 4px 10px; text-align: center;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.6);
+        }
+        .contract-title { font-size: 9px; color: #aaa; font-weight: bold; text-transform: uppercase; }
+        .contract-val { font-size: 16px; font-weight: 900; color: var(--gold-bright); }
+
+        /* Player Pods */
+        .player-wrap { position: absolute; display: flex; align-items: center; z-index: 10; transition: all 0.3s; }
+        .avatar-box { display: flex; flex-direction: column; align-items: center; position: relative; }
+        .avatar {
+            width: 44px; height: 44px; border-radius: 50%; background: #ffeaa7;
+            border: 2px solid #fff; display: flex; align-items: center; justify-content: center;
+            font-size: 22px; box-shadow: 0 3px 8px rgba(0,0,0,0.4);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .user-pod { width: 48px; height: 8px; border-radius: 6px; margin-top: -4px; }
+        .speech-bubble {
+            background: #fff; color: #000; padding: 2px 7px; border-radius: 5px;
+            font-weight: 800; font-size: 10px; margin-bottom: 2px; box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+        .trick-indicator {
+            font-size: 10px; font-weight: 800; color: var(--gold);
+            background: rgba(0,0,0,0.6); padding: 1px 6px; border-radius: 4px; margin-top: 2px;
+        }
+
+        .player-wrap.active-turn .avatar {
+            border-color: var(--gold-bright); box-shadow: 0 0 16px var(--gold-bright); transform: scale(1.1);
+        }
+        .player-wrap.active-turn .speech-bubble { background: var(--gold-bright); }
+
+        #p-top { top: 52px; left: 50%; transform: translateX(-50%); flex-direction: column; }
+        #p-left { left: 8px; top: 44%; transform: translateY(-50%); flex-direction: column; }
+        #p-right { right: 8px; top: 44%; transform: translateY(-50%); flex-direction: column; }
+        #p-bottom { bottom: 135px; left: 50%; transform: translateX(-50%); flex-direction: column; }
+
+        /* Dummy Area (North Table Display) */
+        #dummy-hand-container {
+            position: absolute; top: 120px; left: 50%; transform: translateX(-50%);
+            display: none; justify-content: center; align-items: center;
+            z-index: 25; max-width: 90vw;
+        }
+        .dummy-card {
+            width: 44px !important; height: 66px !important; margin-left: -20px !important;
+            padding: 2px 3px !important; font-size: 12px !important;
+        }
+        .dummy-card .c-val { font-size: 13px !important; }
+        .dummy-card .c-suit-mini { font-size: 11px !important; }
+        .dummy-card .c-center-art { font-size: 18px !important; }
+
+        /* Center Arena */
+        #center-arena {
+            position: absolute; top: 48%; left: 50%; transform: translate(-50%, -50%);
+            width: 250px; height: 250px; pointer-events: none; z-index: 15;
+        }
+        .center-slot { position: absolute; width: 64px; height: 96px; }
+        #slot-0 { bottom: 8px; left: 50%; transform: translateX(-50%); }
+        #slot-1 { left: 6px; top: 50%; transform: translateY(-50%); }
+        #slot-2 { top: 8px; left: 50%; transform: translateX(-50%); }
+        #slot-3 { right: 6px; top: 50%; transform: translateY(-50%); }
+
+        /* Card Elements */
+        #player-hand {
+            width: 100%; height: 125px; display: flex; justify-content: center;
+            align-items: flex-end; padding-bottom: 8px; z-index: 40; overflow: visible;
+        }
+
+        .card {
+            width: 64px; height: 96px; background: #ffffff !important; border: 2px solid #1a1a1a;
+            border-radius: 8px; margin-left: -32px; padding: 4px 5px; display: flex;
+            flex-direction: column; justify-content: space-between; box-shadow: -3px 3px 10px rgba(0,0,0,0.65); 
+            cursor: pointer; position: relative; transform-origin: bottom center; 
+            transition: transform 0.15s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.2s; flex-shrink: 0;
+            opacity: 1;
+        }
+        .card:first-child { margin-left: 0; }
+        .card:hover:not(.disabled), .card:active:not(.disabled) { 
+            transform: translateY(-28px) scale(1.08); z-index: 45; 
+            box-shadow: 0 14px 24px rgba(0,0,0,0.8), 0 0 8px rgba(255,215,0,0.9); border-color: #ffd700;
+        }
+        .card.disabled { opacity: 0.3 !important; filter: grayscale(0.8) brightness(0.65); cursor: not-allowed; pointer-events: none; }
+        .card.bidding-visible { opacity: 1 !important; filter: none !important; cursor: default; }
+
+        .card.red { color: #d63031; }
+        .card.black { color: #111; }
+        .c-corner { display: flex; flex-direction: column; align-items: center; line-height: 0.85; width: 16px; }
+        .c-val { font-size: 17px; font-weight: 900; letter-spacing: -0.5px; }
+        .c-suit-mini { font-size: 14px; font-weight: bold; margin-top: 1px; }
+        .c-center-art { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 26px; opacity: 0.95; }
+        .c-corner.bot { transform: rotate(180deg); }
+
+        .fly-card { position: fixed; z-index: 100; pointer-events: none; margin-left: 0 !important; transition: all 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.2); }
+        .sweep-card { position: fixed; z-index: 100; pointer-events: none; margin-left: 0 !important; transition: all 0.45s ease-in; }
+
+        /* Bridge Bidding Box */
+        #bid-modal {
+            position: absolute; top: 48%; left: 50%; transform: translate(-50%, -50%);
+            width: 320px; background: var(--pad-bg); border: 2px solid #234b4b;
+            box-shadow: 0 10px 35px rgba(0,0,0,0.95); border-radius: 14px; padding: 12px;
+            z-index: 150; display: none; flex-direction: column; align-items: center; gap: 8px;
+        }
+        .bid-level-row { display: flex; gap: 4px; width: 100%; justify-content: center; }
+        .bid-suit-row { display: flex; gap: 4px; width: 100%; justify-content: center; margin-top: 4px; }
+        .b-btn {
+            background: var(--tile-bg); border: 1px solid #439bb3; color: #fff;
+            font-size: 14px; font-weight: bold; padding: 6px 10px; border-radius: 6px; cursor: pointer;
+        }
+        .b-btn.selected { background: var(--tile-active); border-color: #fff; box-shadow: 0 0 10px #38c8ea; }
+        .bid-action-btn {
+            background: var(--btn-gold); border: 2px solid #fff; color: #3b2803;
+            font-size: 14px; font-weight: bold; height: 38px; border-radius: 6px; cursor: pointer;
+            width: 100%; box-shadow: 0 3px 6px rgba(0,0,0,0.4); margin-top: 4px;
+        }
+
+        /* Generic Modal */
+        .generic-modal {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            width: 90%; max-width: 330px; background: #18222d; border: 2px solid #bfa15f; border-radius: 12px;
+            padding: 16px; color: #fff; z-index: 200; display: none; flex-direction: column;
+            box-shadow: 0 15px 50px rgba(0,0,0,0.9);
+        }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+        .modal-title { font-size: 15px; font-weight: bold; color: #ecd58a; }
+        .close-btn { font-size: 18px; cursor: pointer; color: #ccc; }
+        .score-table { width: 100%; border-collapse: collapse; font-size: 11px; margin-top: 6px; }
+        .score-table th, .score-table td { border: 1px solid #334e68; padding: 5px 2px; text-align: center; }
+        .score-table th { background: #243b53; color: #ecd58a; }
+    </style>
+</head>
+<body>
+
+    <div id="game-screen">
+        <div class="top-bar">
+            <div class="icon-btn-group">
+                <div class="circle-btn" onclick="openHistoryModal()" title="7 Days History">📅</div>
+            </div>
+            
+            <div class="team-pill" style="border-color: #2ecc71;">
+                <span>NORTH / SOUTH</span>
+                <div>Score: <b id="score-ns">0</b></div>
+            </div>
+
+            <div class="team-pill" style="border-color: #e74c3c;">
+                <span>EAST / WEST</span>
+                <div>Score: <b id="score-ew">0</b></div>
+            </div>
+        </div>
+
+        <div id="hud-status">Dealing Bridge...</div>
+        <div id="board-watermark"></div>
+
+        <!-- Contract Box -->
+        <div id="contract-box">
+            <div class="contract-title">Contract</div>
+            <div class="contract-val" id="contract-display">Passing</div>
+        </div>
+
+        <!-- North (Partner / Dummy) -->
+        <div class="player-wrap" id="p-top">
+            <div class="speech-bubble" id="bid-label-2">...</div>
+            <div class="avatar-box">
+                <div class="avatar">👩‍🦰</div>
+                <div class="user-pod" style="background: #2ecc71;"></div>
+            </div>
+            <div class="trick-indicator" id="trick-2">Won: 0</div>
+            <span style="font-size: 11px; color: #ddd; font-weight: bold;">North</span>
+        </div>
+
+        <!-- North's Open Dummy Hand -->
+        <div id="dummy-hand-container"></div>
+
+        <!-- West -->
+        <div class="player-wrap" id="p-left">
+            <div class="speech-bubble" id="bid-label-1">...</div>
+            <div class="avatar-box">
+                <div class="avatar">👦</div>
+                <div class="user-pod" style="background: #e74c3c;"></div>
+            </div>
+            <div class="trick-indicator" id="trick-1">Won: 0</div>
+            <span style="font-size: 11px; color: #ddd; font-weight: bold;">West</span>
+        </div>
+
+        <!-- East -->
+        <div class="player-wrap" id="p-right">
+            <div class="speech-bubble" id="bid-label-3">...</div>
+            <div class="avatar-box">
+                <div class="avatar">👩‍🦱</div>
+                <div class="user-pod" style="background: #e74c3c;"></div>
+            </div>
+            <div class="trick-indicator" id="trick-3">Won: 0</div>
+            <span style="font-size: 11px; color: #ddd; font-weight: bold;">East</span>
+        </div>
+
+        <!-- Center Arena -->
+        <div id="center-arena">
+            <div id="slot-0" class="center-slot"></div>
+            <div id="slot-1" class="center-slot"></div>
+            <div id="slot-2" class="center-slot"></div>
+            <div id="slot-3" class="center-slot"></div>
+        </div>
+
+        <!-- South (You) -->
+        <div class="player-wrap" id="p-bottom">
+            <div class="speech-bubble" id="bid-label-0">...</div>
+            <div class="avatar-box">
+                <div class="avatar">🧔</div>
+                <div class="user-pod" style="background: #2ecc71;"></div>
+            </div>
+            <div class="trick-indicator" id="trick-0">Won: 0</div>
+            <span style="font-size: 11px; color: #ddd; font-weight: bold;">South (You)</span>
+        </div>
+
+        <div id="player-hand"></div>
+
+        <!-- Bridge Bidding Box -->
+        <div id="bid-modal">
+            <div style="font-size: 12px; color: #ecd58a; font-weight: bold;" id="bid-info">Bridge Auction</div>
+            <div class="bid-level-row">
+                <div class="b-btn selected" onclick="pickLevel(1, this)">1</div>
+                <div class="b-btn" onclick="pickLevel(2, this)">2</div>
+                <div class="b-btn" onclick="pickLevel(3, this)">3</div>
+                <div class="b-btn" onclick="pickLevel(4, this)">4</div>
+                <div class="b-btn" onclick="pickLevel(5, this)">5</div>
+                <div class="b-btn" onclick="pickLevel(6, this)">6</div>
+                <div class="b-btn" onclick="pickLevel(7, this)">7</div>
+            </div>
+            <div class="bid-suit-row">
+                <div class="b-btn" onclick="pickSuit('♣', this)">♣</div>
+                <div class="b-btn" style="color:#d63031;" onclick="pickSuit('♦', this)">♦</div>
+                <div class="b-btn" style="color:#d63031;" onclick="pickSuit('♥', this)">♥</div>
+                <div class="b-btn" onclick="pickSuit('♠', this)">♠</div>
+                <div class="b-btn selected" onclick="pickSuit('NT', this)">NT</div>
+            </div>
+            <div style="display:flex; gap:6px; width:100%; margin-top:4px;">
+                <button class="bid-action-btn" onclick="confirmHumanBid()">MAKE BID</button>
+                <button class="bid-action-btn" style="background:#7f8c8d; color:#fff;" onclick="humanPass()">PASS</button>
+            </div>
+        </div>
+
+        <!-- Result Summary Modal -->
+        <div id="result-modal" class="generic-modal">
+            <div style="font-size: 18px; font-weight: 900; color: var(--gold-bright); text-align: center; margin-bottom: 10px;" id="res-title">DEAL FINISHED</div>
+            <div style="font-size: 13px; line-height: 1.8;" id="res-desc"></div>
+            <button class="bid-action-btn" style="margin-top: 14px;" onclick="startRound()">PLAY NEXT DEAL</button>
+        </div>
+
+        <!-- 7 Days History Modal -->
+        <div id="history-modal" class="generic-modal">
+            <div class="modal-header">
+                <div class="modal-title">7 DAYS MATCH HISTORY</div>
+                <div class="close-btn" onclick="closeModals()">✖</div>
+            </div>
+            <div style="max-height: 220px; overflow-y: auto;">
+                <table class="score-table">
+                    <thead><tr><th>Date</th><th>Contract</th><th>Result</th><th>Score</th></tr></thead>
+                    <tbody id="history-body"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const SUITS = ['♠', '♥', '♦', '♣'];
+        const SUIT_ORDER = { '♣': 1, '♦': 2, '♥': 3, '♠': 4, 'NT': 5 };
+        const VALUES = [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14];
+        const VALUE_NAMES = { 11: 'J', 12: 'Q', 13: 'K', 14: 'A' };
+        const COURT_ARTS = { 11: '⚔️', 12: '👑', 13: '🤴', 14: '★' };
+        const SUIT_COLORS = { '♠': 'black', '♣': 'black', '♥': 'red', '♦': 'red' };
+        const PLAYERS = ['South', 'West', 'North', 'East'];
+        const PLAYER_ELEMENT_IDS = ['p-bottom', 'p-left', 'p-top', 'p-right'];
+
+        let hands = [[], [], [], []];
+        let tricks = [0, 0, 0, 0];
+        let totalScoreNS = 0;
+        let totalScoreEW = 0;
+
+        let currentTurn = 0;
+        let biddingTurn = 0;
+        let currentTrick = [];
+        let consecutivePasses = 0;
+
+        let highestContract = null; // { level: 1, suit: 'NT', val: 5, player: 0, team: 'NS' }
+        let declarer = null;
+        let dummy = null;
+        let selectedBidLevel = 1;
+        let selectedBidSuit = 'NT';
+
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        function playTone(freq, type, duration, gainVal = 0.08) {
+            try {
+                if (audioCtx.state === 'suspended') audioCtx.resume();
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = type; osc.frequency.value = freq;
+                gain.gain.setValueAtTime(gainVal, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+                osc.connect(gain); gain.connect(audioCtx.destination);
+                osc.start(); osc.stop(audioCtx.currentTime + duration);
+            } catch(e){}
+        }
+
+        function setHUD(text, persist = false) {
+            const el = document.getElementById('hud-status');
+            el.innerText = text; el.classList.add('show');
+            if (!persist) setTimeout(() => el.classList.remove('show'), 1600);
+        }
+
+        function startRound() {
+            closeModals();
+            document.getElementById('bid-modal').style.display = 'none';
+            document.getElementById('dummy-hand-container').style.display = 'none';
+            document.getElementById('contract-display').innerText = 'Passing';
+
+            let deck = [];
+            SUITS.forEach(s => VALUES.forEach(v => deck.push({ suit: s, val: v })));
+            deck.sort(() => Math.random() - 0.5);
+
+            for (let i = 0; i < 4; i++) {
+                hands[i] = deck.slice(i * 13, (i + 1) * 13);
+                sortHand(hands[i]);
+                tricks[i] = 0;
+                document.getElementById(`trick-${i}`).innerText = 'Won: 0';
+                document.getElementById(`bid-label-${i}`).innerText = '...';
+            }
+
+            highestContract = null;
+            declarer = null;
+            dummy = null;
+            consecutivePasses = 0;
+            currentTrick = [];
+
+            renderPlayerHand(true);
+
+            biddingTurn = 0; // South opens auction
+            setHUD("Auction Starts (Bidding)", true);
+            setTimeout(processAuctionTurn, 600);
+        }
+
+        function sortHand(hand) {
+            const sOrder = { '♠': 4, '♥': 3, '♦': 2, '♣': 1 };
+            hand.sort((a, b) => (sOrder[b.suit] - sOrder[a.suit]) || (b.val - a.val));
+        }
+
+        function createCardElement(card) {
+            const el = document.createElement('div');
+            el.className = `card ${SUIT_COLORS[card.suit]}`;
+            const valLabel = VALUE_NAMES[card.val] || card.val;
+            const centerSymbol = COURT_ARTS[card.val] || card.suit;
+            el.innerHTML = `
+                <div class="c-corner top"><span class="c-val">${valLabel}</span><span class="c-suit-mini">${card.suit}</span></div>
+                <div class="c-center-art">${centerSymbol}</div>
+                <div class="c-corner bot"><span class="c-val">${valLabel}</span><span class="c-suit-mini">${card.suit}</span></div>
+            `;
+            return el;
+        }
+
+        /* ------------------ ব্রিজ অকশন (Bidding) ------------------ */
+        function pickLevel(lvl, btn) {
+            selectedBidLevel = lvl;
+            document.querySelectorAll('.bid-level-row .b-btn').forEach(b => b.classList.remove('selected'));
+            btn.classList.add('selected');
+        }
+
+        function pickSuit(st, btn) {
+            selectedBidSuit = st;
+            document.querySelectorAll('.bid-suit-row .b-btn').forEach(b => b.classList.remove('selected'));
+            btn.classList.add('selected');
+        }
+
+        function processAuctionTurn() {
+            if (consecutivePasses === 3 && highestContract !== null) {
+                // অকশন সম্পন্ন
+                document.getElementById('bid-modal').style.display = 'none';
+                finalizeAuction();
+                return;
+            }
+
+            if (consecutivePasses === 4 && highestContract === null) {
+                // সবাই পাস দিলে রি-ডিল
+                setHUD("All Passed. Redealing...");
+                setTimeout(startRound, 1200);
+                return;
+            }
+
+            updateTurnHighlight(biddingTurn);
+
+            if (biddingTurn === 0) {
+                document.getElementById('bid-modal').style.display = 'flex';
+                document.getElementById('bid-info').innerText = highestContract ? 
+                    `Highest: ${highestContract.level}${highestContract.suit} (${PLAYERS[highestContract.player]})` : 'Opening Bid';
+            } else {
+                setTimeout(aiAuctionTurn, 700);
+            }
+        }
+
+        function confirmHumanBid() {
+            const bidVal = (selectedBidLevel * 10) + SUIT_ORDER[selectedBidSuit];
+            const highVal = highestContract ? (highestContract.level * 10) + SUIT_ORDER[highestContract.suit] : 0;
+
+            if (bidVal <= highVal) {
+                alert("আপনার বিড পূর্ববর্তী বিডের চেয়ে বড় হতে হবে!");
+                return;
+            }
+
+            highestContract = {
+                level: selectedBidLevel,
+                suit: selectedBidSuit,
+                player: 0,
+                team: 'NS'
+            };
+            consecutivePasses = 0;
+            document.getElementById(`bid-label-0`).innerText = `${selectedBidLevel}${selectedBidSuit}`;
+            document.getElementById('contract-display').innerText = `${selectedBidLevel}${selectedBidSuit} by South`;
+            document.getElementById('bid-modal').style.display = 'none';
+            playTone(450, 'triangle', 0.1);
+
+            biddingTurn = (biddingTurn + 1) % 4;
+            processAuctionTurn();
+        }
+
+        function humanPass() {
+            consecutivePasses++;
+            document.getElementById(`bid-label-0`).innerText = 'Pass';
+            document.getElementById('bid-modal').style.display = 'none';
+            biddingTurn = (biddingTurn + 1) % 4;
+            processAuctionTurn();
+        }
+
+        function aiAuctionTurn() {
+            // হাই কার্ড পয়েন্ট (HCP) মূল্যায়ন: A=4, K=3, Q=2, J=1
+            let hcp = hands[biddingTurn].reduce((acc, c) => acc + (c.val >= 11 ? c.val - 10 : 0), 0);
+            const highVal = highestContract ? (highestContract.level * 10) + SUIT_ORDER[highestContract.suit] : 0;
+
+            if (hcp >= 12 && highVal < 35) { // সাধারণ ওপেনিং বিড
+                let suitCounts = { '♠':0, '♥':0, '♦':0, '♣':0 };
+                hands[biddingTurn].forEach(c => suitCounts[c.suit]++);
+                let bestSuit = '♠';
+                for (let s in suitCounts) if (suitCounts[s] > suitCounts[bestSuit]) bestSuit = s;
+
+                let nextLevel = highestContract ? highestContract.level : 1;
+                let nextBidVal = (nextLevel * 10) + SUIT_ORDER[bestSuit];
+
+                if (nextBidVal <= highVal) {
+                    nextLevel++;
+                    nextBidVal = (nextLevel * 10) + SUIT_ORDER[bestSuit];
+                }
+
+                if (nextLevel <= 4) {
+                    highestContract = {
+                        level: nextLevel,
+                        suit: bestSuit,
+                        player: biddingTurn,
+                        team: (biddingTurn === 1 || biddingTurn === 3) ? 'EW' : 'NS'
+                    };
+                    consecutivePasses = 0;
+                    document.getElementById(`bid-label-${biddingTurn}`).innerText = `${nextLevel}${bestSuit}`;
+                    document.getElementById('contract-display').innerText = `${nextLevel}${bestSuit} by ${PLAYERS[biddingTurn]}`;
+                    playTone(400, 'triangle', 0.1);
+                } else {
+                    consecutivePasses++;
+                    document.getElementById(`bid-label-${biddingTurn}`).innerText = 'Pass';
+                }
+            } else {
+                consecutivePasses++;
+                document.getElementById(`bid-label-${biddingTurn}`).innerText = 'Pass';
+            }
+
+            biddingTurn = (biddingTurn + 1) % 4;
+            processAuctionTurn();
+        }
+
+        function finalizeAuction() {
+            declarer = highestContract.player;
+            dummy = (declarer + 2) % 4; // ডিক্লেয়ারারের মুখোমুখি পার্টনার ডামি
+
+            setHUD(`Contract: ${highestContract.level}${highestContract.suit} by ${PLAYERS[declarer]}!`);
+            currentTurn = (declarer + 1) % 4; // ডিক্লেয়ারারের বাঁ পাশের ডিফেন্ডার ওপেনিং লিড দেয়
+
+            setTimeout(() => {
+                setHUD(`${PLAYERS[currentTurn]} Leads Opening Card.`);
+                playLoop();
+            }, 1200);
+        }
+
+        /* ------------------ প্লেয়িং ফেজ ও ডামি ডিসপ্লে ------------------ */
+        function showDummyHand() {
+            const container = document.getElementById('dummy-hand-container');
+            container.innerHTML = '';
+            container.style.display = 'flex';
+
+            hands[dummy].forEach((card, idx) => {
+                const el = createCardElement(card);
+                el.classList.add('dummy-card');
+                if (currentTurn === dummy && (declarer === 0)) {
+                    // ডিক্লেয়ারার সাউথ হলে সে ডামির কার্ড ক্লিক করতে পারবে
+                    const valid = getValidMoves(hands[dummy], currentTrick);
+                    if (valid.includes(card)) {
+                        el.onclick = () => playDummyCard(idx, el);
+                    } else {
+                        el.classList.add('disabled');
+                    }
+                }
+                container.appendChild(el);
+            });
+        }
+
+        function renderPlayerHand(disable = false) {
+            const container = document.getElementById('player-hand');
+            container.innerHTML = '';
+            const valid = (!disable && currentTurn === 0) ? getValidMoves(hands[0], currentTrick) : [];
+
+            hands[0].forEach((card, idx) => {
+                const el = createCardElement(card);
+                if (disable) {
+                    el.classList.add('bidding-visible');
+                } else {
+                    const isPlayable = (currentTurn === 0) && valid.includes(card);
+                    if (!isPlayable) el.classList.add('disabled');
+                    else el.onclick = () => humanPlayCard(idx, el);
+                }
+                container.appendChild(el);
+            });
+        }
+
+        function getValidMoves(hand, trick) {
+            if (trick.length === 0) return [...hand];
+            const leadSuit = trick[0].card.suit;
+            const sameSuit = hand.filter(c => c.suit === leadSuit);
+            return sameSuit.length > 0 ? sameSuit : [...hand];
+        }
+
+        function playLoop() {
+            updateTurnHighlight(currentTurn);
+
+            if (currentTrick.length === 4) {
+                setTimeout(evaluateTrick, 900);
+                return;
+            }
+
+            // প্রথম ট্রিক চলাকালীন ডামির কার্ড টেবিলে প্রকাশ করা হয়
+            if (dummy !== null && hands[dummy].length < 13) {
+                showDummyHand();
+            }
+
+            if (currentTurn === 0) {
+                setHUD("Your Turn!");
+                renderPlayerHand(false);
+            } else if (currentTurn === dummy && declarer === 0) {
+                setHUD("Play from Dummy (North)!");
+                renderPlayerHand(true);
+                showDummyHand();
+            } else {
+                renderPlayerHand(true);
+                setTimeout(aiPlayTurn, 700);
+            }
+        }
+
+        function updateTurnHighlight(activeP) {
+            for (let i = 0; i < 4; i++) {
+                const el = document.getElementById(PLAYER_ELEMENT_IDS[i]);
+                if (i === activeP) el.classList.add('active-turn');
+                else el.classList.remove('active-turn');
+            }
+        }
+
+        function humanPlayCard(idx, cardEl) {
+            const card = hands[0].splice(idx, 1)[0];
+            renderPlayerHand(true);
+            animateCardDrop(0, card, cardEl);
+        }
+
+        function playDummyCard(idx, cardEl) {
+            const card = hands[dummy].splice(idx, 1)[0];
+            showDummyHand();
+            animateCardDrop(dummy, card, cardEl);
+        }
+
+        function aiPlayTurn() {
+            const hand = hands[currentTurn];
+            const valid = getValidMoves(hand, currentTrick);
+            let chosen = valid[valid.length - 1]; // সিম্পল এআই
+
+            hand.splice(hand.indexOf(chosen), 1);
+            if (currentTurn === dummy) showDummyHand();
+            animateCardDrop(currentTurn, chosen, null);
+        }
+
+        function animateCardDrop(player, card, sourceEl) {
+            playTone(320, 'triangle', 0.08);
+            const fly = createCardElement(card);
+            fly.classList.add('fly-card');
+            document.body.appendChild(fly);
+
+            const pRect = sourceEl ? sourceEl.getBoundingClientRect() : document.getElementById(PLAYER_ELEMENT_IDS[player]).getBoundingClientRect();
+            fly.style.left = pRect.left + 'px'; fly.style.top = pRect.top + 'px';
+
+            const slot = document.getElementById(`slot-${player}`);
+            const sRect = slot.getBoundingClientRect();
+
+            fly.offsetHeight;
+            fly.style.left = sRect.left + 'px'; fly.style.top = sRect.top + 'px';
+
+            setTimeout(() => {
+                fly.remove();
+                slot.innerHTML = '';
+                const landed = createCardElement(card);
+                landed.style.margin = '0';
+                slot.appendChild(landed);
+
+                currentTrick.push({ player, card });
+                currentTurn = (currentTurn + 1) % 4;
+                playLoop();
+            }, 320);
+        }
+
+        function evaluateTrick() {
+            let winPlay = currentTrick[0];
+            const trumpSuit = highestContract.suit;
+
+            for (let i = 1; i < 4; i++) {
+                const cur = currentTrick[i];
+                if (trumpSuit !== 'NT') {
+                    if (cur.card.suit === trumpSuit && winPlay.card.suit !== trumpSuit) {
+                        winPlay = cur;
+                    } else if (cur.card.suit === winPlay.card.suit && cur.card.val > winPlay.card.val) {
+                        winPlay = cur;
+                    }
+                } else {
+                    if (cur.card.suit === winPlay.card.suit && cur.card.val > winPlay.card.val) {
+                        winPlay = cur;
+                    }
+                }
+            }
+
+            const winner = winPlay.player;
+            tricks[winner]++;
+            document.getElementById(`trick-${winner}`).innerText = `Won: ${tricks[winner]}`;
+            playTone(520, 'sine', 0.15);
+            setHUD(`${PLAYERS[winner]} won Trick!`);
+
+            setTimeout(() => {
+                for (let i = 0; i < 4; i++) document.getElementById(`slot-${i}`).innerHTML = '';
+                currentTrick = [];
+                currentTurn = winner;
+
+                if (hands[0].length > 0 || hands[dummy].length > 0) {
+                    playLoop();
+                } else {
+                    finalizeDeal();
+                }
+            }, 850);
+        }
+
+        /* ------------------ আন্তর্জাতিক ব্রিজ স্কোরিং ------------------ */
+        function finalizeDeal() {
+            const decTeamTricks = (declarer === 0 || declarer === 2) ? (tricks[0] + tricks[2]) : (tricks[1] + tricks[3]);
+            const targetTricks = 6 + highestContract.level;
+            const diff = decTeamTricks - targetTricks;
+            let dealScore = 0;
+            let isMade = diff >= 0;
+
+            if (isMade) {
+                // ট্রিক পয়েন্ট
+                let perTrick = (highestContract.suit === '♣' || highestContract.suit === '♦') ? 20 : 30;
+                let trickPts = (highestContract.suit === 'NT') ? 40 + ((highestContract.level - 1) * 30) : (highestContract.level * perTrick);
+                let overtrickPts = (diff * perTrick);
+                let bonus = (trickPts >= 100) ? 300 : 50; // Game Bonus
+                dealScore = trickPts + overtrickPts + bonus;
+
+                if (highestContract.team === 'NS') totalScoreNS += dealScore;
+                else totalScoreEW += dealScore;
+            } else {
+                // ডাউন পেনাল্টি (প্রতি আন্ডারট্রিকে ৫০ পয়েন্ট)
+                dealScore = Math.abs(diff) * 50;
+                if (highestContract.team === 'NS') totalScoreEW += dealScore;
+                else totalScoreNS += dealScore;
+            }
+
+            document.getElementById('score-ns').innerText = totalScoreNS;
+            document.getElementById('score-ew').innerText = totalScoreEW;
+
+            saveMatchToHistory(highestContract, decTeamTricks, targetTricks, isMade, dealScore);
+
+            const modal = document.getElementById('result-modal');
+            const title = document.getElementById('res-title');
+            const desc = document.getElementById('res-desc');
+
+            title.innerText = isMade ? "🎉 CONTRACT MADE! 🎉" : "💥 CONTRACT DEFEATED!";
+            desc.innerHTML = `
+                <b>Contract:</b> ${highestContract.level}${highestContract.suit} by ${PLAYERS[highestContract.player]}<br>
+                <b>Required:</b> ${targetTricks} Tricks | <b>Won:</b> ${decTeamTricks} Tricks<br>
+                <b>Result:</b> ${diff >= 0 ? '+' + diff : diff}<br>
+                <b>Points Awarded:</b> +${dealScore} to ${isMade ? highestContract.team : (highestContract.team === 'NS' ? 'EW' : 'NS')}<br><br>
+                <b>Total Standings:</b><br>
+                North/South: ${totalScoreNS} | East/West: ${totalScoreEW}
+            `;
+            modal.style.display = 'flex';
+        }
+
+        /* ------------------ ৭ দিনের হিস্ট্রি ------------------ */
+        function saveMatchToHistory(contract, won, req, isMade, pts) {
+            let history = JSON.parse(localStorage.getItem('bridge_history') || '[]');
+            const today = new Date().toISOString().split('T')[0];
+
+            history.unshift({
+                date: today,
+                contract: `${contract.level}${contract.suit} (${contract.team})`,
+                result: `${won}/${req} (${isMade ? 'Made' : 'Down'})`,
+                score: `+${pts}`
+            });
+
+            const sevenDaysAgo = new Date();
+            sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+            history = history.filter(h => new Date(h.date) >= sevenDaysAgo);
+
+            localStorage.setItem('bridge_history', JSON.stringify(history));
+        }
+
+        function openHistoryModal() {
+            const tbody = document.getElementById('history-body');
+            tbody.innerHTML = '';
+            let history = JSON.parse(localStorage.getItem('bridge_history') || '[]');
+
+            if (history.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="4">No Matches Recorded</td></tr>`;
+            } else {
+                history.forEach(h => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td>${h.date}</td>
+                        <td><b>${h.contract}</b></td>
+                        <td>${h.result}</td>
+                        <td style="color:#48bb78; font-weight:bold;">${h.score}</td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            }
+            document.getElementById('history-modal').style.display = 'flex';
+        }
+
+        function closeModals() {
+            document.querySelectorAll('.generic-modal').forEach(m => m.style.display = 'none');
+        }
+
+        window.onload = startRound;
+    </script>
+</body>
+</html>
