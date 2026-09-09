@@ -60,9 +60,9 @@
         .score-pill b { font-size: 14px; color: var(--gold-bright); text-shadow: 0 0 8px rgba(255,215,0,0.6); }
 
         #hud-status {
-            position: absolute; top: 28%; left: 50%; transform: translate(-50%, -50%);
+            position: absolute; top: 29%; left: 50%; transform: translate(-50%, -50%);
             background: rgba(4, 25, 15, 0.94); border: 2px solid var(--gold);
-            padding: 7px 18px; border-radius: 20px; color: #fff; font-size: 13px;
+            padding: 6px 18px; border-radius: 20px; color: #fff; font-size: 12px;
             font-weight: 800; text-transform: uppercase; letter-spacing: 1px;
             box-shadow: 0 0 16px rgba(255, 215, 0, 0.45); z-index: 30; pointer-events: none;
             transition: all 0.25s ease-out; opacity: 0; transform: translate(-50%, -50%) scale(0.85);
@@ -88,47 +88,57 @@
             border-color: var(--gold-bright); box-shadow: 0 0 16px var(--gold-bright); transform: scale(1.1);
         }
 
-        #p-top { top: 54px; left: 50%; transform: translateX(-50%); flex-direction: column; }
-        #p-left { left: 8px; top: 40%; transform: translateY(-50%); flex-direction: column; }
-        #p-right { right: 8px; top: 40%; transform: translateY(-50%); flex-direction: column; }
+        #p-top { top: 58px; left: 50%; transform: translateX(-50%); flex-direction: column; }
+        #p-left { left: 8px; top: 44%; transform: translateY(-50%); flex-direction: column; }
+        #p-right { right: 8px; top: 44%; transform: translateY(-50%); flex-direction: column; }
 
-        /* Center Table Piles */
+        /* Center Table Piles - একদম পরিষ্কার ও সেন্ট্রাল */
         #table-piles {
-            position: absolute; top: 48%; left: 50%; transform: translate(-50%, -50%);
-            display: flex; gap: 24px; align-items: center; z-index: 25;
+            position: absolute; top: 46%; left: 50%; transform: translate(-50%, -50%);
+            display: flex; gap: 28px; align-items: center; z-index: 20;
         }
         .pile-box {
             display: flex; flex-direction: column; align-items: center; gap: 4px; cursor: pointer;
         }
-        .pile-label { font-size: 10px; font-weight: 900; color: var(--gold-bright); text-transform: uppercase; }
+        .pile-label { font-size: 10px; font-weight: 900; color: var(--gold-bright); text-transform: uppercase; letter-spacing: 0.5px; }
         .closed-deck-card {
             width: 64px; height: 96px; border-radius: 8px; border: 2px solid var(--gold);
             background: repeating-linear-gradient(45deg, #1e293b, #1e293b 8px, #0f172a 8px, #0f172a 16px);
             display: flex; align-items: center; justify-content: center; color: var(--gold);
             font-size: 24px; box-shadow: 0 6px 14px rgba(0,0,0,0.6);
         }
+        .closed-deck-card:active { transform: scale(0.96); }
+
         .discard-slot {
-            width: 64px; height: 96px; border-radius: 8px; border: 2px dashed rgba(255,255,255,0.3);
+            width: 64px; height: 96px; border-radius: 8px; border: 2px dashed rgba(255,255,255,0.4);
             display: flex; align-items: center; justify-content: center; position: relative;
         }
 
-        /* Action Buttons Area */
+        /* Bottom Section: Action Bar + Hand */
+        #bottom-container {
+            width: 100%; display: flex; flex-direction: column; align-items: center;
+            z-index: 40; margin-bottom: 6px;
+        }
+
+        /* কন্ট্রোল বাটন বার - টেবিলের কার্ডকে ব্লক করবে না */
         #rummy-action-bar {
-            width: 100%; display: flex; justify-content: center; gap: 10px;
-            padding: 4px 10px; z-index: 45;
+            display: flex; justify-content: center; gap: 8px; width: 100%;
+            padding: 6px 10px; margin-bottom: 4px;
         }
         .action-sm-btn {
             background: var(--tile-bg); border: 1.5px solid #439bb3; color: #fff;
-            font-size: 11px; font-weight: 800; padding: 6px 14px; border-radius: 6px; cursor: pointer;
+            font-size: 11px; font-weight: 800; padding: 7px 12px; border-radius: 6px; cursor: pointer;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.4);
         }
+        .action-sm-btn:active { transform: scale(0.95); }
         .action-sm-btn.declare {
             background: var(--btn-gold); border-color: #fff; color: #2b1d03;
         }
 
         /* Player Hand */
         #player-hand {
-            width: 100%; height: 130px; display: flex; justify-content: center;
-            align-items: flex-end; padding-bottom: 8px; z-index: 40; overflow: visible;
+            width: 100%; height: 110px; display: flex; justify-content: center;
+            align-items: flex-end; overflow: visible; padding-bottom: 4px;
         }
 
         .card {
@@ -136,12 +146,12 @@
             border-radius: 8px; margin-left: -38px; padding: 4px 5px; display: flex;
             flex-direction: column; justify-content: space-between; box-shadow: -3px 3px 10px rgba(0,0,0,0.65); 
             cursor: pointer; position: relative; transform-origin: bottom center; 
-            transition: transform 0.15s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.2s; flex-shrink: 0;
+            transition: transform 0.15s cubic-bezier(0.175, 0.885, 0.32, 1.275); flex-shrink: 0;
             opacity: 1;
         }
         .card:first-child { margin-left: 0; }
         .card:hover, .card.selected { 
-            transform: translateY(-28px) scale(1.08); z-index: 45; 
+            transform: translateY(-24px) scale(1.08); z-index: 45; 
             box-shadow: 0 14px 24px rgba(0,0,0,0.8), 0 0 8px rgba(255,215,0,0.9); border-color: #ffd700;
         }
         .card.red { color: #d63031; }
@@ -152,6 +162,7 @@
         .c-center-art { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 26px; opacity: 0.95; }
         .c-corner.bot { transform: rotate(180deg); }
 
+        /* Modal */
         .generic-modal {
             position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
             width: 90%; max-width: 320px; background: #18222d; border: 2px solid #bfa15f; border-radius: 12px;
@@ -229,15 +240,15 @@
             </div>
         </div>
 
-        <!-- Rummy Controls -->
-        <div id="rummy-action-bar">
-            <button class="action-sm-btn" onclick="sortHandBySuit()">SORT SUIT</button>
-            <button class="action-sm-btn" onclick="discardSelectedCard()">DISCARD CARD</button>
-            <button class="action-sm-btn declare" onclick="declareRummyShow()">DECLARE / SHOW</button>
+        <!-- Bottom Hand & Action Bar Container -->
+        <div id="bottom-container">
+            <div id="rummy-action-bar">
+                <button class="action-sm-btn" onclick="sortHandBySuit()">SORT SUIT</button>
+                <button class="action-sm-btn" onclick="discardSelectedCard()">DISCARD CARD</button>
+                <button class="action-sm-btn declare" onclick="declareRummyShow()">DECLARE / SHOW</button>
+            </div>
+            <div id="player-hand"></div>
         </div>
-
-        <!-- User Hand -->
-        <div id="player-hand"></div>
 
         <!-- Show Result Modal -->
         <div id="result-modal" class="generic-modal">
@@ -273,7 +284,7 @@
         let discardPile = [];
         let playerHand = [];
         let botCardsCount = [0, 13, 13, 13];
-        let currentTurn = 0; // 0 = User, 1 = Left, 2 = Top, 3 = Right
+        let currentTurn = 0;
         let hasDrawnCard = false;
         let selectedHandIndex = -1;
         let totalPenaltyPoints = 0;
@@ -304,19 +315,16 @@
             hasDrawnCard = false;
             currentTurn = 0;
 
-            // ২ ডেকের স্ট্যান্ডার্ড রমি ডেক তৈরি
             deck = [];
             for (let d = 0; d < 2; d++) {
                 SUITS.forEach(s => VALUES.forEach(v => deck.push({ suit: s, val: v })));
             }
             deck.sort(() => Math.random() - 0.5);
 
-            // প্লেয়ারের ১৩টি কার্ড ও বটের ট্র্যাকিং
             playerHand = deck.splice(0, 13);
             sortHandBySuit();
             botCardsCount = [0, 13, 13, 13];
 
-            // ওপেন পাইল কার্ড
             discardPile = [deck.pop()];
             renderDiscardPile();
 
@@ -376,7 +384,6 @@
             }
         }
 
-        /* ------------------ ড্র ও ডিসকার্ড অ্যাকশন ------------------ */
         function drawCardFromClosedDeck() {
             if (currentTurn !== 0 || hasDrawnCard) return;
             if (deck.length === 0) return alert("Closed deck is empty!");
@@ -386,7 +393,7 @@
             hasDrawnCard = true;
             playTone(400, 'triangle', 0.08);
             renderPlayerHand();
-            setHUD("Card Drawn! Now Select & Discard.");
+            setHUD("Card Drawn! Select a Card to Discard.");
         }
 
         function drawCardFromDiscardPile() {
@@ -399,7 +406,7 @@
             playTone(400, 'triangle', 0.08);
             renderDiscardPile();
             renderPlayerHand();
-            setHUD("Card Picked! Now Select & Discard.");
+            setHUD("Card Picked! Select a Card to Discard.");
         }
 
         function discardSelectedCard() {
@@ -425,7 +432,6 @@
         function processBotTurns() {
             if (currentTurn === 0) return;
 
-            // বট সাধারণ ড্র ও ডিসকার্ড সাইকেল সম্পন্ন করে
             const drawnFromOpen = Math.random() > 0.6 && discardPile.length > 0;
             if (drawnFromOpen) {
                 discardPile.pop();
@@ -433,7 +439,6 @@
                 deck.pop();
             }
 
-            // বট ডিসকার্ড করে
             if (deck.length > 0) {
                 const randomDiscard = { suit: SUITS[Math.floor(Math.random() * 4)], val: VALUES[Math.floor(Math.random() * VALUES.length)] };
                 discardPile.push(randomDiscard);
@@ -452,14 +457,12 @@
             }
         }
 
-        /* ------------------ ডিক্লেয়ার ও ভ্যালিডেশন ------------------ */
         function declareRummyShow() {
             if (currentTurn !== 0) return alert("এখন আপনার চাল নয়!");
             if (playerHand.length !== 14 && playerHand.length !== 13) {
                 return alert("ডিক্লেয়ার করার আগে কার্ড ড্র করুন!");
             }
 
-            // সাধারণ বিশুদ্ধ সিকোয়েন্স চেকার
             const hasPure = checkPureSequence(playerHand);
 
             if (hasPure) {
@@ -499,7 +502,6 @@
             document.getElementById('result-modal').style.display = 'flex';
         }
 
-        /* ------------------ ৭ দিনের হিস্ট্রি ------------------ */
         function saveMatchToHistory(game, result, pts) {
             let history = JSON.parse(localStorage.getItem('rummy_history') || '[]');
             const today = new Date().toISOString().split('T')[0];
