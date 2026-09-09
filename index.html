@@ -5,7 +5,18 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Royal Card Club</title>
     
+    <!-- PWA Configuration -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#0d5f38">
+    <link rel="apple-touch-icon" href="logo.png">
     <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js').catch(err => console.log('SW error:', err));
+            });
+        }
+    </script>
 
     <style>
         :root {
@@ -28,6 +39,29 @@
             background: #05140d !important; overflow: hidden; 
         }
 
+        /* অটো ইনস্টল বটম শীট পপ-আপ */
+        #pwa-install-popup {
+            position: fixed; bottom: -200px; left: 50%; transform: translateX(-50%);
+            width: 92%; max-width: 420px; background: #162a22; border: 2px solid var(--gold);
+            border-radius: 14px; padding: 14px 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.9);
+            z-index: 20000; display: flex; align-items: center; justify-content: space-between;
+            transition: bottom 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        #pwa-install-popup.show { bottom: 20px; }
+        .install-info { display: flex; align-items: center; gap: 10px; }
+        .install-img { width: 44px; height: 44px; border-radius: 8px; border: 1.5px solid var(--gold); }
+        .install-txt-title { font-size: 14px; font-weight: 900; color: #fff; }
+        .install-txt-desc { font-size: 11px; color: #aaa; margin-top: 2px; }
+        .install-btn {
+            background: var(--btn-gold); border: 1.5px solid #fff; border-radius: 8px;
+            color: #2b1d03; font-weight: 900; font-size: 12px; padding: 8px 14px; cursor: pointer;
+        }
+        .install-close {
+            position: absolute; top: -8px; right: -8px; width: 22px; height: 22px;
+            background: #222; border: 1.5px solid #fff; border-radius: 50%; color: #fff;
+            font-size: 12px; display: flex; align-items: center; justify-content: center; cursor: pointer;
+        }
+
         /* ১. মূল গেম মেনু লবি */
         #lobby-screen {
             width: 100%; height: 100%; max-width: 480px; margin: 0 auto;
@@ -36,24 +70,15 @@
             position: relative; z-index: 1000; overflow-y: auto; padding: 20px 16px;
         }
 
-        .lobby-header {
-            text-align: center; margin-top: 10px; margin-bottom: 20px;
-        }
-        .lobby-logo {
-            width: 85px; height: 85px; object-fit: contain; margin-bottom: 6px;
-        }
+        .lobby-header { text-align: center; margin-top: 10px; margin-bottom: 20px; }
+        .lobby-logo { width: 85px; height: 85px; object-fit: contain; margin-bottom: 6px; }
         .lobby-title {
             font-size: 24px; font-weight: 900; color: var(--gold);
             letter-spacing: 1px; text-shadow: 0 2px 6px rgba(0,0,0,0.8);
         }
-        .lobby-subtitle {
-            font-size: 12px; color: #d1e7dd; font-weight: bold; margin-top: 2px;
-        }
+        .lobby-subtitle { font-size: 12px; color: #d1e7dd; font-weight: bold; margin-top: 2px; }
 
-        .games-grid {
-            display: flex; flex-direction: column; gap: 12px; width: 100%;
-        }
-
+        .games-grid { display: flex; flex-direction: column; gap: 12px; width: 100%; }
         .game-card {
             background: linear-gradient(135deg, rgba(20, 55, 40, 0.95) 0%, rgba(10, 30, 20, 0.98) 100%);
             border: 2px solid #ecd58a; border-radius: 14px; padding: 14px 16px;
@@ -61,21 +86,14 @@
             box-shadow: 0 6px 18px rgba(0,0,0,0.6); cursor: pointer;
         }
         .game-card:active { transform: scale(0.97); }
-
-        .card-info {
-            display: flex; align-items: center; gap: 14px;
-        }
+        .card-info { display: flex; align-items: center; gap: 14px; }
         .game-icon-box {
             width: 48px; height: 48px; border-radius: 12px; background: rgba(0,0,0,0.5);
             border: 1.5px solid var(--gold); display: flex; align-items: center; justify-content: center;
             font-size: 24px;
         }
-        .game-name {
-            font-size: 17px; font-weight: 900; color: #fff;
-        }
-        .game-desc {
-            font-size: 11px; color: #aaa; margin-top: 2px;
-        }
+        .game-name { font-size: 17px; font-weight: 900; color: #fff; }
+        .game-desc { font-size: 11px; color: #aaa; margin-top: 2px; }
         .play-tag {
             background: var(--btn-gold); color: #2b1d03; font-size: 12px;
             font-weight: 900; padding: 6px 14px; border-radius: 20px; border: 1.5px solid #fff;
@@ -262,6 +280,19 @@
     </style>
 </head>
 <body>
+
+    <!-- অটো ইনস্টল পপ-আপ -->
+    <div id="pwa-install-popup">
+        <div class="install-close" onclick="dismissInstall()">✖</div>
+        <div class="install-info">
+            <img src="logo.png" class="install-img" onerror="this.src='icon.png'">
+            <div>
+                <div class="install-txt-title">Royal Card Club</div>
+                <div class="install-txt-desc">Install app for fast & smooth play</div>
+            </div>
+        </div>
+        <button class="install-btn" onclick="installPWA()">INSTALL</button>
+    </div>
 
     <!-- ১. মূল লবি মেনু -->
     <div id="lobby-screen">
@@ -504,6 +535,43 @@
     </div>
 
     <script>
+        /* ------------------ অটো PWA ইনস্টল ইঞ্জিন ------------------ */
+        let deferredPrompt = null;
+        const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            
+            // কেবল ব্রাউজারে খুললে পপ-আপ দেখাবে, ইনস্টল অ্যাপে কখনোই নয়
+            if (!isStandalone) {
+                setTimeout(() => {
+                    const popup = document.getElementById('pwa-install-popup');
+                    if (popup) popup.classList.add('show');
+                }, 2000);
+            }
+        });
+
+        function installPWA() {
+            const popup = document.getElementById('pwa-install-popup');
+            if (popup) popup.classList.remove('show');
+
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                deferredPrompt.userChoice.then((choiceResult) => {
+                    deferredPrompt = null;
+                });
+            } else {
+                alert("আপনার ব্রাউজারের থ্রি-ডট (⋮) মেনুতে গিয়ে 'Install app' বা 'Add to Home screen' অপশনে চাপ দিন।");
+            }
+        }
+
+        function dismissInstall() {
+            const popup = document.getElementById('pwa-install-popup');
+            if (popup) popup.classList.remove('show');
+        }
+
+        /* ------------------ লবি মেনু নেভিগেশন ------------------ */
         function launchGame(target) {
             if (target === 'callbreak') {
                 document.getElementById('lobby-screen').style.display = 'none';
@@ -520,6 +588,7 @@
             document.getElementById('lobby-screen').style.display = 'flex';
         }
 
+        /* ------------------ কল ব্রেক কোর ইঞ্জিন ------------------ */
         const SERVER_URL = "https://call-break-edad.onrender.com";
         let socket = null;
         let isOnline = false;
