@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Teen Patti Championship</title>
+    <style>
+        :root {
+            --bg-felt: #0c4d2d;
+            --felt-light: #188651;
+            --gold: #f59e0b;
+            --gold-bright: #ffd700;
+            --pad-bg: #102626;
+            --tile-bg: linear-gradient(180deg, #2a8da4 0%, #154c5e 100%);
+            --tile-active: linear-gradient(180deg, #38c8ea 0%, #1c738f 100%);
+            --btn-gold: linear-gradient(180deg, #ecd58a 0%, #a88434 100%);
+        }
+
+        * {
+            box-sizing: border-box; margin: 0; padding: 0;
+            font-family: 'Segoe UI', system-ui, sans-serif; user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        html, body { width: 100%; height: 100%; overflow: hidden; background: #05140d; }
+
+        #game-screen {
+            width: 100vw; height: 100dvh; max-width: 480px; margin: 0 auto;
+            background: radial-gradient(circle at 50% 45%, var(--felt-light) 0%, var(--bg-felt) 70%, #06311b 100%);
+            position: relative; overflow: hidden; display: flex; flex-direction: column; justify-content: space-between;
+        }
+
+        #board-watermark {
+            position: absolute; top: 48%; left: 50%; transform: translate(-50%, -50%);
+            width: 250px; height: 250px; background-image: url('logo.png');
+            background-size: contain; background-repeat: no-repeat; background-position: center;
+            opacity: 0.16; pointer-events: none; z-index: 1;
+        }
+
+        /* Top Header */
+        .top-bar {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 8px 12px; z-index: 50;
+            background: linear-gradient(180deg, rgba(0,0,0,0.65) 0%, rgba(0,0,0,0.1) 100%);
+        }
+        .icon-btn-group { display: flex; gap: 6px; }
+        .circle-btn {
+            width: 36px; height: 36px; background: #bfa15f; border: 2px solid #ecd58a;
+            border-radius: 8px; display: flex; align-items: center; justify-content: center;
+            font-size: 16px; cursor: pointer; box-shadow: 0 2px 5px rgba(0,0,0,0.4);
+        }
+        .circle-btn:active { transform: scale(0.92); }
+
+        .pot-badge {
+            background: rgba(10, 25, 18, 0.9); border: 2px solid var(--gold);
+            padding: 4px 14px; border-radius: 20px; font-size: 12px; font-weight: bold;
+            color: #fff; box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+            display: flex; align-items: center; gap: 6px;
+        }
+        .pot-badge b { font-size: 16px; color: var(--gold-bright); text-shadow: 0 0 8px rgba(255,215,0,0.7); }
+
+        .wallet-pill {
+            background: rgba(0,0,0,0.5); border: 1.5px solid var(--gold);
+            padding: 4px 8px; border-radius: 14px; display: flex; align-items: center; gap: 5px;
+            font-size: 11px; color: #ddd; font-weight: bold;
+        }
+        .add-chip-btn {
+            background: var(--btn-gold); border: 1px solid #fff; border-radius: 50%;
+            width: 18px; height: 18px; display: flex; align-items: center; justify-content: center;
+            font-size: 12px; font-weight: 900; color: #3b2803; cursor: pointer;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.4);
+        }
+        .add-chip-btn:active { transform: scale(0.9); }
+
+        #hud-status {
+            position: absolute; top: 29%; left: 50%; transform: translate(-50%, -50%);
+            background: rgba(4, 25, 15, 0.94); border: 2px solid var(--gold);
+            padding: 6px 18px; border-radius: 20px; color: #fff; font-size: 12px;
+            font-weight: 800; text-transform: uppercase; letter-spacing: 1px;
+            box-shadow: 0 0 16px rgba(255, 215, 0, 0.45); z-index: 30; pointer-events: none;
+            transition: all 0.25s ease-out; opacity: 0; transform: translate(-50%, -50%) scale(0.85);
+            text-align: center;
+        }
+        #hud-status.show { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+
+        /* Opponents */
+        .player-wrap { position: absolute; display: flex; align-items: center; z-index: 10; transition: all 0.3s; }
+        .avatar-box { display: flex; flex-direction: column; align-items: center; position: relative; }
+        .avatar {
+            width: 44px; height: 44px; border-radius: 50%; background: #ffeaa7;
+            border: 2px solid #fff; display: flex; align-items: center; justify-content: center;
+            font-size: 22px; box-shadow: 0 3px 8px rgba(0,0,0,0.4);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .user-pod { width: 48px; height: 8px; border-radius: 6px; margin-top: -4px; }
+        .speech-bubble {
+            background: #fff; color: #000; padding: 2px 7px; border-radius: 5px;
+            font-weight: 800; font-size: 10px; margin-bottom: 2px; box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .player-wrap.active-turn .avatar {
+            border-color: var(--gold-bright); box-shadow: 0 0 16px var(--gold-bright); transform: scale(1.1);
+        }
+
+        #p-top { top: 56px; left: 50%; transform: translateX(-50%); flex-direction: column; }
+        #p-left { left: 8px; top: 44%; transform: translateY(-50%); flex-direction: column; }
+        #p-right { right: 8px; top: 44%; transform: translateY(-50%); flex-direction: column; }
+
+        .mini-cards-row { display: flex; gap: 2px; margin-top: 3px; }
+        .mini-closed-card {
+            width: 14px; height: 20px; background: #1e293b; border: 1px solid var(--gold); border-radius: 2px;
+        }
+
+        /* Bottom Controls & Hand */
+        #bottom-container {
+            width: 100%; display: flex; flex-direction: column; align-items: center;
+            z-index: 40; margin-bottom: 8px;
+        }
+
+        #tp-controls {
+            display: flex; justify-content: center; gap: 8px; width: 100%;
+            padding: 6px 10px; margin-bottom: 6px;
+        }
+        .tp-btn {
+            background: var(--tile-bg); border: 1.5px solid #439bb3; color: #fff;
+            font-size: 12px; font-weight: 800; padding: 8px 14px; border-radius: 6px; cursor: pointer;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+        }
+        .tp-btn:active { transform: scale(0.95); }
+        .tp-btn.chaal { background: var(--btn-gold); border-color: #fff; color: #2b1d03; }
+        .tp-btn.pack { background: #c0392b; border-color: #e74c3c; color: #fff; }
+
+        #player-hand {
+            width: 100%; height: 110px; display: flex; justify-content: center;
+            align-items: flex-end; overflow: visible; padding-bottom: 4px;
+        }
+
+        .card {
+            width: 64px; height: 96px; background: #ffffff !important; border: 2px solid #1a1a1a;
+            border-radius: 8px; margin-left: -20px; padding: 4px 5px; display: flex;
+            flex-direction: column; justify-content: space-between; box-shadow: -3px 3px 10px rgba(0,0,0,0.65); 
+            cursor: pointer; position: relative; transform-origin: bottom center; 
+            transition: transform 0.15s cubic-bezier(0.175, 0.885, 0.32, 1.275); flex-shrink: 0;
+        }
+        .card:first-child { margin-left: 0; }
+        .card.closed-card {
+            background: repeating-linear-gradient(45deg, #1e293b, #1e293b 8px, #0f172a 8px, #0f172a 16px) !important;
+            border-color: var(--gold);
+        }
+        .card.red { color: #d63031; }
+        .card.black { color: #111; }
+        .c-corner { display: flex; flex-direction: column; align-items: center; line-height: 0.85; width: 16px; }
+        .c-val { font-size: 17px; font-weight: 900; letter-spacing: -0.5px; }
+        .c-suit-mini { font-size: 14px; font-weight: bold; margin-top: 1px; }
+        .c-center-art { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 26px; opacity: 0.95; }
+        .c-corner.bot { transform: rotate(180deg); }
+
+        /* Modals */
+        .generic-modal {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            width: 90%; max-width: 320px; background: #18222d; border: 2px solid #bfa15f; border-radius: 12px;
+            padding: 16px; color: #fff; z-index: 200; display: none; flex-direction: column;
+            box-shadow: 0 15px 50px rgba(0,0,0,0.9);
+        }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+        .modal-title { font-size: 15px; font-weight: bold; color: #ecd58a; }
+        .close-btn { font-size: 18px; cursor: pointer; color: #ccc; }
+        .score-table { width: 100%; border-collapse: collapse; font-size: 11px; margin-top: 6px; }
+        .score-table th, .score-table td { border: 1px solid #334e68; padding: 5px 2px; text-align: center; }
+        .score-table th { background: #243b53; color: #ecd58a; }
+        .bid-action-btn {
+            background: var(--btn-gold); border: 2px solid #fff; color: #3b2803;
+            font-size: 14px; font-weight: bold; height: 38px; border-radius: 6px; cursor: pointer;
+            width: 100%; margin-top: 12px; box-shadow: 0 3px 6px rgba(0,0,0,0.4);
+        }
+    </style>
+</head>
+<body>
+
+    <div id="game-screen">
+        <div class="top-bar">
+            <div class="icon-btn-group">
+                <div class="circle-btn" onclick="openHistoryModal()" title="7 Days History">📅</div>
+            </div>
+            <div class="pot-badge">
+                <span>POT:</span> <b id="pot-amount">0</b> <span>CHIPS</span>
+            </div>
+            <div class="wallet-pill">
+                <span>WALLET:</span> <b id="user-chips" style="color:var(--gold-bright);">1000</b>
+                <div class="add-chip-btn" onclick="openRefillModal()" title="Refill Chips">+</div>
+            </div>
+        </div>
+
+        <div id="hud-status">Starting Teen Patti...</div>
+        <div id="board-watermark"></div>
+
+        <!-- Opponents -->
+        <div class="player-wrap" id="p-top">
+            <div class="speech-bubble" id="bid-top">Blind</div>
+            <div class="avatar-box">
+                <div class="avatar">👩‍🦰</div>
+                <div class="user-pod" style="background: #27ae60;"></div>
+            </div>
+            <div class="mini-cards-row"><div class="mini-closed-card"></div><div class="mini-closed-card"></div><div class="mini-closed-card"></div></div>
+            <span style="font-size: 10px; color: #bbb;">Player 2</span>
+        </div>
+
+        <div class="player-wrap" id="p-left">
+            <div class="speech-bubble" id="bid-left">Blind</div>
+            <div class="avatar-box">
+                <div class="avatar">👦</div>
+                <div class="user-pod" style="background: #e74c3c;"></div>
+            </div>
+            <div class="mini-cards-row"><div class="mini-closed-card"></div><div class="mini-closed-card"></div><div class="mini-closed-card"></div></div>
+            <span style="font-size: 10px; color: #bbb;">Player 1</span>
+        </div>
+
+        <div class="player-wrap" id="p-right">
+            <div class="speech-bubble" id="bid-right">Blind</div>
+            <div class="avatar-box">
+                <div class="avatar">👩‍🦱</div>
+                <div class="user-pod" style="background: #e74c3c;"></div>
+            </div>
+            <div class="mini-cards-row"><div class="mini-closed-card"></div><div class="mini-closed-card"></div><div class="mini-closed-card"></div></div>
+            <span style="font-size: 10px; color: #bbb;">Player 3</span>
+        </div>
+
+        <!-- Bottom Controls & Hand -->
+        <div id="bottom-container">
+            <div id="tp-controls">
+                <button class="tp-btn" id="see-btn" onclick="seeCards()">SEE CARDS</button>
+                <button class="tp-btn chaal" id="chaal-btn" onclick="playChaal()">BLIND (10)</button>
+                <button class="tp-btn" id="show-btn" onclick="showDuel()">SHOW</button>
+                <button class="tp-btn pack" onclick="packGame()">PACK</button>
+            </div>
+            <div id="player-hand"></div>
+        </div>
+
+        <!-- Result Modal -->
+        <div id="result-modal" class="generic-modal">
+            <div style="font-size: 18px; font-weight: 900; color: var(--gold-bright); text-align: center; margin-bottom: 10px;" id="res-title">ROUND RESULT</div>
+            <div style="font-size: 13px; line-height: 1.8;" id="res-desc"></div>
+            <button class="bid-action-btn" onclick="startRound()">PLAY NEXT HAND</button>
+        </div>
+
+        <!-- Free Chips Refill Modal -->
+        <div id="refill-modal" class="generic-modal">
+            <div class="modal-header">
+                <div class="modal-title">REFILL FREE CHIPS</div>
+                <div class="close-btn" onclick="closeModals()">✖</div>
+            </div>
+            <div style="text-align:center; padding:10px 0;">
+                <div style="font-size:38px; margin-bottom:6px;">🪙</div>
+                <div style="font-size:14px; color:#ecd58a; font-weight:bold;">Out of Chips?</div>
+                <div style="font-size:12px; color:#ccc; margin-top:4px;">চিপস শেষ হয়ে গেছে! কোনো চিন্তা নেই, নিচে ক্লিক করে এখনই ফ্রি চিপস রিফিল করে নিন।</div>
+            </div>
+            <button class="bid-action-btn" onclick="claimFreeChips(1000)">CLAIM +1,000 CHIPS</button>
+        </div>
+
+        <!-- 7 Days History Modal -->
+        <div id="history-modal" class="generic-modal">
+            <div class="modal-header">
+                <div class="modal-title">7 DAYS MATCH HISTORY</div>
+                <div class="close-btn" onclick="closeModals()">✖</div>
+            </div>
+            <div style="max-height: 220px; overflow-y: auto;">
+                <table class="score-table">
+                    <thead><tr><th>Date</th><th>Pot</th><th>Hand</th><th>Result</th></tr></thead>
+                    <tbody id="history-body"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const SUITS = ['♠', '♥', '♣', '♦'];
+        const VALUES = [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14];
+        const VALUE_NAMES = { 11: 'J', 12: 'Q', 13: 'K', 14: 'A' };
+        const COURT_ARTS = { 11: '⚔️', 12: '👑', 13: '🤴', 14: '★' };
+        const SUIT_COLORS = { '♠': 'black', '♣': 'black', '♥': 'red', '♦': 'red' };
+        const PLAYER_ELEMENT_IDS = ['', 'p-left', 'p-top', 'p-right'];
+
+        let deck = [];
+        let playerHand = [];
+        let botHands = [[], [], [], []];
+        let isCardsSeen = false;
+        let potAmount = 0;
+        
+        // লোকাল স্টোরেজ থেকে চিপস লোড করা
+        let userChips = parseInt(localStorage.getItem('tp_user_chips')) || 1000;
+        let currentBet = 10;
+        let currentTurn = 0;
+        let activePlayers = [0, 1, 2, 3];
+
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        function playTone(freq, type, duration) {
+            try {
+                if (audioCtx.state === 'suspended') audioCtx.resume();
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = type; osc.frequency.value = freq;
+                gain.gain.setValueAtTime(0.08, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+                osc.connect(gain); gain.connect(audioCtx.destination);
+                osc.start(); osc.stop(audioCtx.currentTime + duration);
+            } catch(e){}
+        }
+
+        function setHUD(text, persist = false) {
+            const el = document.getElementById('hud-status');
+            el.innerText = text; el.classList.add('show');
+            if (!persist) setTimeout(() => el.classList.remove('show'), 1600);
+        }
+
+        function updateWalletDisplay() {
+            document.getElementById('user-chips').innerText = userChips;
+            localStorage.setItem('tp_user_chips', userChips);
+        }
+
+        function openRefillModal() {
+            closeModals();
+            document.getElementById('refill-modal').style.display = 'flex';
+        }
+
+        function claimFreeChips(amount) {
+            userChips += amount;
+            updateWalletDisplay();
+            closeModals();
+            playTone(580, 'sine', 0.2);
+            setHUD(`+${amount} Chips Refilled!`);
+        }
+
+        function startRound() {
+            closeModals();
+
+            // বুট অ্যামাউন্টের চিপস না থাকলে রিফিল পপ-আপ
+            if (userChips < 10) {
+                openRefillModal();
+                return;
+            }
+
+            isCardsSeen = false;
+            currentTurn = 0;
+            currentBet = 10;
+            activePlayers = [0, 1, 2, 3];
+
+            deck = [];
+            SUITS.forEach(s => VALUES.forEach(v => deck.push({ suit: s, val: v })));
+            deck.sort(() => Math.random() - 0.5);
+
+            playerHand = deck.splice(0, 3).sort((a,b) => b.val - a.val);
+            botHands[1] = deck.splice(0, 3).sort((a,b) => b.val - a.val);
+            botHands[2] = deck.splice(0, 3).sort((a,b) => b.val - a.val);
+            botHands[3] = deck.splice(0, 3).sort((a,b) => b.val - a.val);
+
+            potAmount = 40;
+            userChips -= 10;
+            document.getElementById('pot-amount').innerText = potAmount;
+            updateWalletDisplay();
+
+            document.getElementById('see-btn').style.display = 'block';
+            document.getElementById('chaal-btn').innerText = `BLIND (${currentBet})`;
+
+            document.getElementById('bid-left').innerText = "Blind";
+            document.getElementById('bid-top').innerText = "Blind";
+            document.getElementById('bid-right').innerText = "Blind";
+
+            renderPlayerHand();
+            updateTurnHighlight();
+            setHUD("Game On! Play Blind or See.", true);
+        }
+
+        function createCardElement(card, isClosed = false) {
+            const el = document.createElement('div');
+            if (isClosed) {
+                el.className = 'card closed-card';
+                return el;
+            }
+            el.className = `card ${SUIT_COLORS[card.suit]}`;
+            const valLabel = VALUE_NAMES[card.val] || card.val;
+            const centerSymbol = COURT_ARTS[card.val] || card.suit;
+            el.innerHTML = `
+                <div class="c-corner top"><span class="c-val">${valLabel}</span><span class="c-suit-mini">${card.suit}</span></div>
+                <div class="c-center-art">${centerSymbol}</div>
+                <div class="c-corner bot"><span class="c-val">${valLabel}</span><span class="c-suit-mini">${card.suit}</span></div>
+            `;
+            return el;
+        }
+
+        function renderPlayerHand() {
+            const container = document.getElementById('player-hand');
+            container.innerHTML = '';
+            playerHand.forEach(card => {
+                const el = createCardElement(card, !isCardsSeen);
+                container.appendChild(el);
+            });
+        }
+
+        function updateTurnHighlight() {
+            for (let i = 1; i <= 3; i++) {
+                const el = document.getElementById(PLAYER_ELEMENT_IDS[i]);
+                if (currentTurn === i) el.classList.add('active-turn');
+                else el.classList.remove('active-turn');
+            }
+        }
+
+        function seeCards() {
+            isCardsSeen = true;
+            document.getElementById('see-btn').style.display = 'none';
+            currentBet = currentBet * 2;
+            document.getElementById('chaal-btn').innerText = `CHAAL (${currentBet})`;
+            playTone(550, 'sine', 0.15);
+            renderPlayerHand();
+        }
+
+        function playChaal() {
+            if (currentTurn !== 0) return;
+            
+            // চাল দেওয়ার চিপস না থাকলে রিফিল পপ-আপ
+            if (userChips < currentBet) {
+                openRefillModal();
+                return;
+            }
+
+            userChips -= currentBet;
+            potAmount += currentBet;
+            document.getElementById('pot-amount').innerText = potAmount;
+            updateWalletDisplay();
+            playTone(420, 'triangle', 0.08);
+
+            advanceToNextPlayer();
+        }
+
+        function packGame() {
+            if (currentTurn !== 0) return;
+            activePlayers = activePlayers.filter(p => p !== 0);
+            saveMatchToHistory(potAmount, "Packed", "LOST");
+            showResultModal("PACKED!", "আপনি হ্যান্ড ছেড়ে দিয়েছেন (Pack)।");
+        }
+
+        function advanceToNextPlayer() {
+            currentTurn = (currentTurn + 1) % 4;
+            updateTurnHighlight();
+
+            if (currentTurn !== 0) {
+                setHUD(`Player ${currentTurn} Thinking...`, true);
+                setTimeout(aiTurn, 800);
+            } else {
+                setHUD("Your Turn!", true);
+            }
+        }
+
+        function aiTurn() {
+            if (!activePlayers.includes(currentTurn)) {
+                advanceToNextPlayer();
+                return;
+            }
+
+            const botStrength = evaluateHand(botHands[currentTurn]).score;
+            if (botStrength < 200 && Math.random() > 0.65) {
+                activePlayers = activePlayers.filter(p => p !== currentTurn);
+                document.getElementById(`bid-${currentTurn === 1 ? 'left' : currentTurn === 2 ? 'top' : 'right'}`).innerText = "Packed";
+            } else {
+                potAmount += currentBet;
+                document.getElementById('pot-amount').innerText = potAmount;
+                playTone(380, 'triangle', 0.08);
+            }
+
+            if (activePlayers.length === 1) {
+                determineWinner();
+            } else {
+                advanceToNextPlayer();
+            }
+        }
+
+        function evaluateHand(cards) {
+            const v = cards.map(c => c.val).sort((a,b) => b - a);
+            const isFlush = cards[0].suit === cards[1].suit && cards[1].suit === cards[2].suit;
+            const isStraight = (v[0] === v[1] + 1 && v[1] === v[2] + 1) || (v[0] === 14 && v[1] === 3 && v[2] === 2);
+
+            if (v[0] === v[1] && v[1] === v[2]) return { name: "Trail (Trio)", score: 6000 + v[0] };
+            if (isStraight && isFlush) return { name: "Pure Sequence", score: 5000 + v[0] };
+            if (isStraight) return { name: "Sequence", score: 4000 + v[0] };
+            if (isFlush) return { name: "Color", score: 3000 + v[0] };
+            if (v[0] === v[1] || v[1] === v[2] || v[0] === v[2]) {
+                const pairVal = (v[0] === v[1] || v[0] === v[2]) ? v[0] : v[1];
+                return { name: "Pair", score: 2000 + pairVal };
+            }
+            return { name: "High Card", score: 1000 + v[0] };
+        }
+
+        function showDuel() {
+            if (currentTurn !== 0) return;
+            seeCards();
+            determineWinner();
+        }
+
+        function determineWinner() {
+            let bestPlayer = activePlayers[0];
+            let maxScore = -1;
+            let bestRankName = "";
+
+            activePlayers.forEach(p => {
+                const hand = (p === 0) ? playerHand : botHands[p];
+                const res = evaluateHand(hand);
+                if (res.score > maxScore) {
+                    maxScore = res.score;
+                    bestPlayer = p;
+                    bestRankName = res.name;
+                }
+            });
+
+            const userWon = (bestPlayer === 0);
+            if (userWon) {
+                userChips += potAmount;
+                updateWalletDisplay();
+                playTone(620, 'sine', 0.25);
+            }
+
+            const myEval = evaluateHand(playerHand);
+            saveMatchToHistory(potAmount, myEval.name, userWon ? "WON" : "LOST");
+            showResultModal(
+                userWon ? "🎉 YOU WON THE POT! 🎉" : "💥 YOU LOST!",
+                `<b>Winner:</b> ${userWon ? 'You' : 'Player ' + bestPlayer}<br>
+                 <b>Winning Hand:</b> ${bestRankName}<br>
+                 <b>Total Pot:</b> ${potAmount} Chips`
+            );
+        }
+
+        function showResultModal(title, desc) {
+            document.getElementById('res-title').innerText = title;
+            document.getElementById('res-desc').innerHTML = desc;
+            document.getElementById('result-modal').style.display = 'flex';
+        }
+
+        function saveMatchToHistory(pot, handName, result) {
+            let history = JSON.parse(localStorage.getItem('teenpatti_history') || '[]');
+            const today = new Date().toISOString().split('T')[0];
+
+            history.unshift({ date: today, pot: `${pot} Chips`, hand: handName, result, isWin: result === 'WON' });
+            const sevenDaysAgo = new Date();
+            sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+            history = history.filter(h => new Date(h.date) >= sevenDaysAgo);
+
+            localStorage.setItem('teenpatti_history', JSON.stringify(history));
+        }
+
+        function openHistoryModal() {
+            const tbody = document.getElementById('history-body');
+            tbody.innerHTML = '';
+            let history = JSON.parse(localStorage.getItem('teenpatti_history') || '[]');
+
+            if (history.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="4">No Records Found</td></tr>`;
+            } else {
+                history.forEach(h => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td>${h.date}</td>
+                        <td><b>${h.pot}</b></td>
+                        <td>${h.hand}</td>
+                        <td style="color:${h.isWin ? '#48bb78':'#f56565'}; font-weight:bold;">${h.result}</td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            }
+            document.getElementById('history-modal').style.display = 'flex';
+        }
+
+        function closeModals() {
+            document.querySelectorAll('.generic-modal').forEach(m => m.style.display = 'none');
+        }
+
+        window.onload = () => {
+            updateWalletDisplay();
+            startRound();
+        };
+    </script>
+</body>
+</html>
