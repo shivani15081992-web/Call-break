@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Royal Ludo Championship</title>
     <style>
         :root {
@@ -23,22 +23,23 @@
         }
 
         #game-screen {
-            width: 100vw; height: 100vh; max-width: 480px; margin: 0 auto;
+            width: 100vw; height: 100dvh; max-width: 480px; margin: 0 auto;
             background: radial-gradient(circle at 50% 35%, #188651 0%, var(--bg-felt) 70%, #03150c 100%);
             display: flex; flex-direction: column; justify-content: space-between;
             align-items: center; position: relative; overflow: hidden;
+            padding-bottom: env(safe-area-inset-bottom, 8px);
         }
 
         /* Top Header */
         .top-bar {
             width: 100%; display: flex; justify-content: space-between; align-items: center;
-            padding: 8px 12px; background: rgba(0,0,0,0.5); z-index: 50;
-            border-bottom: 2px solid rgba(255, 215, 0, 0.4);
+            padding: 6px 12px; background: rgba(0,0,0,0.5); z-index: 50;
+            border-bottom: 2px solid rgba(255, 215, 0, 0.4); flex-shrink: 0;
         }
         .circle-btn {
-            width: 36px; height: 36px; background: #bfa15f; border: 2px solid #ecd58a;
+            width: 34px; height: 34px; background: #bfa15f; border: 2px solid #ecd58a;
             border-radius: 8px; display: flex; align-items: center; justify-content: center;
-            font-size: 16px; cursor: pointer; box-shadow: 0 2px 5px rgba(0,0,0,0.4);
+            font-size: 15px; cursor: pointer; box-shadow: 0 2px 5px rgba(0,0,0,0.4);
         }
         .circle-btn:active { transform: scale(0.92); }
 
@@ -49,52 +50,52 @@
         }
 
         #hud-status {
-            position: absolute; top: 11%; left: 50%; transform: translate(-50%, -50%);
+            position: absolute; top: 10%; left: 50%; transform: translate(-50%, -50%);
             background: rgba(4, 25, 15, 0.96); border: 2px solid var(--gold);
-            padding: 6px 18px; border-radius: 20px; color: #fff; font-size: 12px;
+            padding: 5px 16px; border-radius: 20px; color: #fff; font-size: 11px;
             font-weight: 900; text-transform: uppercase; letter-spacing: 1px;
             box-shadow: 0 0 16px rgba(255, 215, 0, 0.5); z-index: 100; pointer-events: none;
             transition: all 0.25s ease-out; opacity: 0; text-align: center;
         }
         #hud-status.show { opacity: 1; }
 
-        /* Board Container */
+        /* Board Container - পারফেক্ট আসপেক্ট রেশিও */
         #board-container {
-            width: 95vw; max-width: 420px; height: 95vw; max-height: 420px;
-            border: 8px solid #2d1808; border-radius: 16px;
-            box-shadow: 0 12px 30px rgba(0,0,0,0.85), 0 0 15px rgba(255,215,0,0.3);
-            background: #fff; position: relative;
+            width: 90vw; max-width: 380px; height: 90vw; max-height: 380px;
+            border: 6px solid #2d1808; border-radius: 14px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.85), 0 0 15px rgba(255,215,0,0.3);
+            background: #fff; position: relative; margin: auto 0; flex-shrink: 0;
         }
 
         canvas {
             width: 100%; height: 100%; display: block; border-radius: 8px;
         }
 
-        /* 3D Dice Control Panel */
+        /* 3D Dice Control Panel - সবসময় স্ক্রিনে দৃশ্যমান */
         #control-panel {
-            width: 100%; padding: 10px 18px; display: flex;
+            width: 100%; padding: 8px 18px 12px 18px; display: flex;
             justify-content: space-between; align-items: center;
-            background: rgba(0,0,0,0.7); border-top: 2px solid rgba(255,215,0,0.3);
-            z-index: 50;
+            background: rgba(0,0,0,0.75); border-top: 2px solid rgba(255,215,0,0.35);
+            z-index: 50; flex-shrink: 0;
         }
 
         .dice-area {
-            display: flex; align-items: center; gap: 14px;
+            display: flex; align-items: center; gap: 12px;
         }
 
         .real-dice {
-            width: 66px; height: 66px;
+            width: 60px; height: 60px;
             background: radial-gradient(circle at 35% 35%, #ffffff 0%, #f1f2f6 60%, #dfe4ea 100%);
-            border-radius: 16px;
-            box-shadow: 0 8px 0 #a4b0be, 0 12px 20px rgba(0,0,0,0.7), inset 0 2px 4px rgba(255,255,255,0.9);
+            border-radius: 14px;
+            box-shadow: 0 6px 0 #a4b0be, 0 10px 16px rgba(0,0,0,0.7), inset 0 2px 4px rgba(255,255,255,0.9);
             border: 2px solid #ced6e0;
             display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(3, 1fr);
-            padding: 8px; cursor: pointer; position: relative;
+            padding: 6px; cursor: pointer; position: relative;
             transition: transform 0.15s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
         .real-dice:active {
-            transform: translateY(4px);
-            box-shadow: 0 4px 0 #a4b0be, 0 6px 12px rgba(0,0,0,0.6);
+            transform: translateY(3px);
+            box-shadow: 0 3px 0 #a4b0be, 0 5px 10px rgba(0,0,0,0.6);
         }
 
         .real-dice.rolling {
@@ -103,19 +104,19 @@
 
         @keyframes proDiceRoll {
             0% { transform: rotate(0deg) scale(0.9); }
-            40% { transform: rotate(180deg) scale(1.18); box-shadow: 0 16px 25px rgba(255,215,0,0.5); }
+            40% { transform: rotate(180deg) scale(1.15); box-shadow: 0 14px 22px rgba(255,215,0,0.5); }
             80% { transform: rotate(320deg) scale(1.05); }
             100% { transform: rotate(360deg) scale(1); }
         }
 
         .pip {
-            width: 12px; height: 12px; background: radial-gradient(circle at 40% 40%, #2f3542, #000);
+            width: 10px; height: 10px; background: radial-gradient(circle at 40% 40%, #2f3542, #000);
             border-radius: 50%; align-self: center; justify-self: center;
             box-shadow: inset 0 2px 3px rgba(0,0,0,0.8), 0 1px 1px rgba(255,255,255,0.8);
         }
         .pip.red-pip {
             background: radial-gradient(circle at 35% 35%, #ff4757, #b33939) !important;
-            width: 16px; height: 16px;
+            width: 14px; height: 14px;
             box-shadow: inset 0 2px 4px rgba(0,0,0,0.7), 0 0 6px rgba(255,71,87,0.6);
         }
 
@@ -151,8 +152,8 @@
         <!-- ৩ডি ডাইস কন্ট্রোল -->
         <div id="control-panel">
             <div>
-                <div style="font-size: 11px; color: #aaa; font-weight: bold;">CURRENT TURN:</div>
-                <div style="font-size: 16px; font-weight: 900; color: #e71d36;" id="active-player-name">RED (YOU)</div>
+                <div style="font-size: 10px; color: #aaa; font-weight: bold;">CURRENT TURN:</div>
+                <div style="font-size: 15px; font-weight: 900; color: #e71d36;" id="active-player-name">RED (YOU)</div>
             </div>
 
             <div class="dice-area">
@@ -191,7 +192,7 @@
 
         const PLAYERS = ['red', 'green', 'yellow', 'blue'];
 
-        // ঘড়ির কাঁটার দিকের ৫২টি ঘরের সঠিক ট্র্যাক
+        // ৫২টি ঘরের ঘড়ির কাঁটার দিকের পথ
         const TRACK = [
             [6,1],[6,2],[6,3],[6,4],[6,5],
             [5,6],[4,6],[3,6],[2,6],[1,6],[0,6],
@@ -207,22 +208,21 @@
             [7,0],[6,0]
         ];
 
-        // শুরু হওয়ার ইনডেক্স
         const START_IDX = { red: 0, green: 13, yellow: 26, blue: 39 };
 
-        // ৮টি সম্পূর্ণ নিরাপদ স্টার (৪টি স্টার্টিং সেল + ৪টি লুপ-টার্ন সেল)
+        // ৮টি সম্পূর্ণ নিরাপদ স্টার
         const SAFE_STARS = [
-            [6, 1],  // Red Start Cell Star
-            [8, 2],  // Red Track Safe Star
-            [1, 8],  // Green Start Cell Star
-            [2, 6],  // Green Track Safe Star
-            [8, 13], // Yellow Start Cell Star
-            [6, 12], // Yellow Track Safe Star
-            [13, 6], // Blue Start Cell Star
-            [12, 8]  // Blue Track Safe Star
+            [6, 1],  // Red Start
+            [8, 2],  // Red Track Safe
+            [1, 8],  // Green Start
+            [2, 6],  // Green Track Safe
+            [8, 13], // Yellow Start
+            [6, 12], // Yellow Track Safe
+            [13, 6], // Blue Start
+            [12, 8]  // Blue Track Safe
         ];
 
-        // ছবির মতো ৪টি স্টার্টিং অ্যারো (যা সরাসরি স্টার্টিং সেলের দিকে নির্দেশ করে)
+        // ৪টি ডিরেকশন অ্যারো
         const START_ARROWS = [
             { r: 6, c: 0, dir: '→', col: COLORS.red },
             { r: 0, c: 8, dir: '↓', col: COLORS.green },
@@ -270,10 +270,8 @@
                         osc.frequency.setValueAtTime(320 + Math.random() * 250, audioCtx.currentTime);
                         gain.gain.setValueAtTime(0.12, audioCtx.currentTime);
                         gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.05);
-                        osc.connect(gain);
-                        gain.connect(audioCtx.destination);
-                        osc.start();
-                        osc.stop(audioCtx.currentTime + 0.05);
+                        osc.connect(gain); gain.connect(audioCtx.destination);
+                        osc.start(); osc.stop(audioCtx.currentTime + 0.05);
                     }, i * 55);
                 }
             } catch(e){}
@@ -289,10 +287,8 @@
                 osc.frequency.exponentialRampToValueAtTime(320, audioCtx.currentTime + 0.07);
                 gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
                 gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.07);
-                osc.connect(gain);
-                gain.connect(audioCtx.destination);
-                osc.start();
-                osc.stop(audioCtx.currentTime + 0.07);
+                osc.connect(gain); gain.connect(audioCtx.destination);
+                osc.start(); osc.stop(audioCtx.currentTime + 0.07);
             } catch(e){}
         }
 
@@ -306,10 +302,8 @@
                 osc.frequency.linearRampToValueAtTime(100, audioCtx.currentTime + 0.28);
                 gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
                 gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.28);
-                osc.connect(gain);
-                gain.connect(audioCtx.destination);
-                osc.start();
-                osc.stop(audioCtx.currentTime + 0.28);
+                osc.connect(gain); gain.connect(audioCtx.destination);
+                osc.start(); osc.stop(audioCtx.currentTime + 0.28);
             } catch(e){}
         }
 
@@ -323,10 +317,8 @@
                 osc.frequency.setValueAtTime(659.25, audioCtx.currentTime + 0.1);
                 gain.gain.setValueAtTime(0.18, audioCtx.currentTime);
                 gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.25);
-                osc.connect(gain);
-                gain.connect(audioCtx.destination);
-                osc.start();
-                osc.stop(audioCtx.currentTime + 0.25);
+                osc.connect(gain); gain.connect(audioCtx.destination);
+                osc.start(); osc.stop(audioCtx.currentTime + 0.25);
             } catch(e){}
         }
 
@@ -343,7 +335,6 @@
             ctx.fillStyle = '#ffffff';
             ctx.fillRect(0, 0, C_SIZE, C_SIZE);
 
-            // গ্রিড দাগ
             ctx.strokeStyle = '#333333';
             ctx.lineWidth = 1.2;
             for (let i = 0; i <= 15; i++) {
@@ -353,7 +344,6 @@
                 ctx.stroke();
             }
 
-            // হোম পাথওয়ে
             for (let i = 1; i <= 5; i++) {
                 fillCell(7, i, COLORS.red);
                 fillCell(i, 7, COLORS.green);
@@ -361,13 +351,11 @@
                 fillCell(14 - i, 7, COLORS.blue);
             }
 
-            // স্টার্টিং সেল
             fillCell(6, 1, COLORS.red);
             fillCell(1, 8, COLORS.green);
             fillCell(8, 13, COLORS.yellow);
             fillCell(13, 6, COLORS.blue);
 
-            // ৪টি কর্নার বেস
             drawBase(0, 0, COLORS.red, 'red');
             drawBase(9 * CELL, 0, COLORS.green, 'green');
             drawBase(9 * CELL, 9 * CELL, COLORS.yellow, 'yellow');
@@ -375,10 +363,7 @@
 
             drawCenterTriangle();
 
-            // নির্ধারিত ৮টি সেফ স্টার (স্টার্টিং পয়েন্ট সহ)
             SAFE_STARS.forEach(([r, c]) => drawOutlineStar(c * CELL + CELL / 2, r * CELL + CELL / 2));
-
-            // স্টার্টিং সেলের দিকে নির্দেশকারী ৪টি কালার অ্যারো
             START_ARROWS.forEach(a => drawStartArrow(a.c * CELL + CELL / 2, a.r * CELL + CELL / 2, a.dir, a.col));
 
             drawAllTokens();
@@ -455,7 +440,7 @@
         function drawAllTokens() {
             PLAYERS.forEach(color => {
                 tokens[color].forEach((pos, idx) => {
-                    if (pos === 56) return; // কেন্দ্রে পৌঁছে হোম হওয়া ঘুঁটি
+                    if (pos === 56) return;
                     const coords = getTokenPixelPos(color, pos, idx);
                     drawPinToken(coords.x, coords.y, COLORS[color], color === PLAYERS[currentTurnIdx]);
                 });
@@ -477,7 +462,6 @@
             return { x: 7.5 * CELL, y: 7.5 * CELL };
         }
 
-        /* ------------------ পিন-হেড ৩ডি ঘুঁটি ------------------ */
         function drawPinToken(x, y, color, isCurrentPlayer) {
             ctx.save();
             y = y - 4;
@@ -617,13 +601,12 @@
             let gainedBonusTurn = false;
 
             if (cur === -1 && diceVal === 6) {
-                tokens[color][idx] = 0; // স্টার্টিং সেলে বসবে (যা একটি নিরাপদ স্টার)
+                tokens[color][idx] = 0;
                 playTokenStepSound();
             } else {
                 tokens[color][idx] += diceVal;
                 playTokenStepSound();
 
-                // ঘুঁটি পেকে সেন্টারে উঠলে (Step 56) ফ্রি বোনাস চাল
                 if (tokens[color][idx] === 56) {
                     gainedBonusTurn = true;
                     playHomeWinSound();
@@ -634,7 +617,6 @@
             drawBoard();
 
             setTimeout(() => {
-                // ঘুঁটি কাটার চেক এবং সফল কাটায় বোনাস চাল অর্জন
                 const captured = checkCapture(color, idx);
                 if (captured) {
                     gainedBonusTurn = true;
@@ -642,13 +624,11 @@
 
                 isMoving = false;
 
-                // ৪টি ঘুঁটি সেন্টারে পৌঁছালে বিজয়ী ঘোষণা
                 if (tokens[color].every(p => p === 56)) {
                     showWinModal(color);
                     return;
                 }
 
-                // বোনাস চাল পাওয়ার শর্ত: ছক্কা (৬) পড়লে, ঘুঁটি কাটলে অথবা ঘুঁটি হোম হলে
                 if (diceVal === 6 || gainedBonusTurn) {
                     canRoll = true;
                     if (gainedBonusTurn && diceVal !== 6) {
@@ -670,7 +650,6 @@
             const myTrackIdx = (START_IDX[color] + myPos) % 52;
             const [myR, myC] = TRACK[myTrackIdx];
 
-            // সেফ স্টার ঘরে কোনো ঘুঁটি কাটা যাবে না
             const isSafe = SAFE_STARS.some(([sr, sc]) => sr === myR && sc === myC);
             if (isSafe) return false;
 
@@ -682,7 +661,7 @@
                     if (oppPos >= 0 && oppPos <= 50) {
                         const oppTrackIdx = (START_IDX[opp] + oppPos) % 52;
                         if (oppTrackIdx === myTrackIdx) {
-                            tokens[opp][oppIdx] = -1; // প্রতিপক্ষের ঘুঁটি বেসে ফেরত
+                            tokens[opp][oppIdx] = -1;
                             playCaptureSound();
                             setHUD(`${color.toUpperCase()} Captured ${opp.toUpperCase()}! (+1 Bonus Turn)`);
                             drawBoard();
