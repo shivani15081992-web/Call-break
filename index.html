@@ -314,6 +314,18 @@
                 <div class="play-tag">PLAY</div>
             </div>
 
+            <!-- Royal Ludo -->
+            <div class="game-card" onclick="launchGame('ludo.html')">
+                <div class="card-info">
+                    <div class="game-icon-box">🎲</div>
+                    <div>
+                        <div class="game-name">Royal Ludo</div>
+                        <div class="game-desc">Classic Board Game with 3D Dice</div>
+                    </div>
+                </div>
+                <div class="play-tag">PLAY</div>
+            </div>
+
             <div class="game-card" onclick="launchGame('29.html')">
                 <div class="card-info">
                     <div class="game-icon-box">👑</div>
@@ -543,7 +555,6 @@
             e.preventDefault();
             deferredPrompt = e;
             
-            // কেবল ব্রাউজারে খুললে পপ-আপ দেখাবে, ইনস্টল অ্যাপে কখনোই নয়
             if (!isStandalone) {
                 setTimeout(() => {
                     const popup = document.getElementById('pwa-install-popup');
