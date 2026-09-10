@@ -27,19 +27,18 @@
             background: radial-gradient(circle at 50% 35%, #188651 0%, var(--bg-felt) 70%, #03150c 100%);
             display: flex; flex-direction: column; justify-content: space-between;
             align-items: center; position: relative; overflow: hidden;
-            padding-bottom: env(safe-area-inset-bottom, 8px);
         }
 
         /* Top Header */
         .top-bar {
             width: 100%; display: flex; justify-content: space-between; align-items: center;
-            padding: 6px 12px; background: rgba(0,0,0,0.5); z-index: 50;
+            padding: 8px 12px; background: rgba(0,0,0,0.55); z-index: 50;
             border-bottom: 2px solid rgba(255, 215, 0, 0.4); flex-shrink: 0;
         }
         .circle-btn {
-            width: 34px; height: 34px; background: #bfa15f; border: 2px solid #ecd58a;
+            width: 36px; height: 36px; background: #bfa15f; border: 2px solid #ecd58a;
             border-radius: 8px; display: flex; align-items: center; justify-content: center;
-            font-size: 15px; cursor: pointer; box-shadow: 0 2px 5px rgba(0,0,0,0.4);
+            font-size: 16px; cursor: pointer; box-shadow: 0 2px 5px rgba(0,0,0,0.4);
         }
         .circle-btn:active { transform: scale(0.92); }
 
@@ -59,23 +58,32 @@
         }
         #hud-status.show { opacity: 1; }
 
-        /* Board Container - পারফেক্ট আসপেক্ট রেশিও */
+        /* Board Container: কোনো অবস্থাতেই ছক্কার জায়গা কাটবে না */
+        #board-wrapper-area {
+            flex: 1; width: 100%; display: flex;
+            align-items: center; justify-content: center;
+            padding: 4px; overflow: hidden;
+        }
+
         #board-container {
-            width: 90vw; max-width: 380px; height: 90vw; max-height: 380px;
+            width: min(92vw, calc(100dvh - 165px));
+            height: min(92vw, calc(100dvh - 165px));
+            max-width: 420px; max-height: 420px;
             border: 6px solid #2d1808; border-radius: 14px;
             box-shadow: 0 8px 25px rgba(0,0,0,0.85), 0 0 15px rgba(255,215,0,0.3);
-            background: #fff; position: relative; margin: auto 0; flex-shrink: 0;
+            background: #fff; position: relative;
         }
 
         canvas {
             width: 100%; height: 100%; display: block; border-radius: 8px;
         }
 
-        /* 3D Dice Control Panel - সবসময় স্ক্রিনে দৃশ্যমান */
+        /* 3D Dice Control Panel: অ্যাপ মোডে ১০০% সুরক্ষিত */
         #control-panel {
-            width: 100%; padding: 8px 18px 12px 18px; display: flex;
-            justify-content: space-between; align-items: center;
-            background: rgba(0,0,0,0.75); border-top: 2px solid rgba(255,215,0,0.35);
+            width: 100%;
+            padding: 8px 18px max(14px, env(safe-area-inset-bottom, 14px)) 18px;
+            display: flex; justify-content: space-between; align-items: center;
+            background: rgba(0,0,0,0.85); border-top: 2px solid rgba(255,215,0,0.4);
             z-index: 50; flex-shrink: 0;
         }
 
@@ -84,10 +92,10 @@
         }
 
         .real-dice {
-            width: 60px; height: 60px;
+            width: 58px; height: 58px;
             background: radial-gradient(circle at 35% 35%, #ffffff 0%, #f1f2f6 60%, #dfe4ea 100%);
             border-radius: 14px;
-            box-shadow: 0 6px 0 #a4b0be, 0 10px 16px rgba(0,0,0,0.7), inset 0 2px 4px rgba(255,255,255,0.9);
+            box-shadow: 0 5px 0 #8395a7, 0 8px 16px rgba(0,0,0,0.8), inset 0 2px 3px rgba(255,255,255,0.9);
             border: 2px solid #ced6e0;
             display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(3, 1fr);
             padding: 6px; cursor: pointer; position: relative;
@@ -95,7 +103,7 @@
         }
         .real-dice:active {
             transform: translateY(3px);
-            box-shadow: 0 3px 0 #a4b0be, 0 5px 10px rgba(0,0,0,0.6);
+            box-shadow: 0 2px 0 #8395a7, 0 4px 8px rgba(0,0,0,0.6);
         }
 
         .real-dice.rolling {
@@ -104,7 +112,7 @@
 
         @keyframes proDiceRoll {
             0% { transform: rotate(0deg) scale(0.9); }
-            40% { transform: rotate(180deg) scale(1.15); box-shadow: 0 14px 22px rgba(255,215,0,0.5); }
+            40% { transform: rotate(180deg) scale(1.15); box-shadow: 0 12px 20px rgba(255,215,0,0.5); }
             80% { transform: rotate(320deg) scale(1.05); }
             100% { transform: rotate(360deg) scale(1); }
         }
@@ -112,7 +120,7 @@
         .pip {
             width: 10px; height: 10px; background: radial-gradient(circle at 40% 40%, #2f3542, #000);
             border-radius: 50%; align-self: center; justify-self: center;
-            box-shadow: inset 0 2px 3px rgba(0,0,0,0.8), 0 1px 1px rgba(255,255,255,0.8);
+            box-shadow: inset 0 1px 2px rgba(0,0,0,0.8), 0 1px 1px rgba(255,255,255,0.8);
         }
         .pip.red-pip {
             background: radial-gradient(circle at 35% 35%, #ff4757, #b33939) !important;
@@ -144,12 +152,14 @@
 
         <div id="hud-status">Roll Dice!</div>
 
-        <!-- ক্যানভাস বোর্ড -->
-        <div id="board-container">
-            <canvas id="ludoCanvas" width="600" height="600"></canvas>
+        <!-- অটো-এডজাস্টেবল ক্যানভাস এলাকা -->
+        <div id="board-wrapper-area">
+            <div id="board-container">
+                <canvas id="ludoCanvas" width="600" height="600"></canvas>
+            </div>
         </div>
 
-        <!-- ৩ডি ডাইস কন্ট্রোল -->
+        <!-- ৩ডি ডাইস কন্ট্রোল বার -->
         <div id="control-panel">
             <div>
                 <div style="font-size: 10px; color: #aaa; font-weight: bold;">CURRENT TURN:</div>
@@ -181,7 +191,7 @@
         const canvas = document.getElementById('ludoCanvas');
         const ctx = canvas.getContext('2d');
         const C_SIZE = 600;
-        const CELL = C_SIZE / 15; // 40px
+        const CELL = C_SIZE / 15;
 
         const COLORS = {
             red: '#e71d36',
@@ -192,7 +202,6 @@
 
         const PLAYERS = ['red', 'green', 'yellow', 'blue'];
 
-        // ৫২টি ঘরের ঘড়ির কাঁটার দিকের পথ
         const TRACK = [
             [6,1],[6,2],[6,3],[6,4],[6,5],
             [5,6],[4,6],[3,6],[2,6],[1,6],[0,6],
@@ -210,19 +219,17 @@
 
         const START_IDX = { red: 0, green: 13, yellow: 26, blue: 39 };
 
-        // ৮টি সম্পূর্ণ নিরাপদ স্টার
         const SAFE_STARS = [
-            [6, 1],  // Red Start
-            [8, 2],  // Red Track Safe
-            [1, 8],  // Green Start
-            [2, 6],  // Green Track Safe
-            [8, 13], // Yellow Start
-            [6, 12], // Yellow Track Safe
-            [13, 6], // Blue Start
-            [12, 8]  // Blue Track Safe
+            [6, 1],
+            [8, 2],
+            [1, 8],
+            [2, 6],
+            [8, 13],
+            [6, 12],
+            [13, 6],
+            [12, 8]
         ];
 
-        // ৪টি ডিরেকশন অ্যারো
         const START_ARROWS = [
             { r: 6, c: 0, dir: '→', col: COLORS.red },
             { r: 0, c: 8, dir: '↓', col: COLORS.green },
@@ -256,7 +263,6 @@
             blue: [-1, -1, -1, -1]
         };
 
-        /* ------------------ সাউন্ড ইঞ্জিন ------------------ */
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
         function playDiceRollSound() {
@@ -270,8 +276,10 @@
                         osc.frequency.setValueAtTime(320 + Math.random() * 250, audioCtx.currentTime);
                         gain.gain.setValueAtTime(0.12, audioCtx.currentTime);
                         gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.05);
-                        osc.connect(gain); gain.connect(audioCtx.destination);
-                        osc.start(); osc.stop(audioCtx.currentTime + 0.05);
+                        osc.connect(gain);
+                        gain.connect(audioCtx.destination);
+                        osc.start();
+                        osc.stop(audioCtx.currentTime + 0.05);
                     }, i * 55);
                 }
             } catch(e){}
@@ -287,8 +295,10 @@
                 osc.frequency.exponentialRampToValueAtTime(320, audioCtx.currentTime + 0.07);
                 gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
                 gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.07);
-                osc.connect(gain); gain.connect(audioCtx.destination);
-                osc.start(); osc.stop(audioCtx.currentTime + 0.07);
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.07);
             } catch(e){}
         }
 
@@ -302,8 +312,10 @@
                 osc.frequency.linearRampToValueAtTime(100, audioCtx.currentTime + 0.28);
                 gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
                 gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.28);
-                osc.connect(gain); gain.connect(audioCtx.destination);
-                osc.start(); osc.stop(audioCtx.currentTime + 0.28);
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.28);
             } catch(e){}
         }
 
@@ -317,8 +329,10 @@
                 osc.frequency.setValueAtTime(659.25, audioCtx.currentTime + 0.1);
                 gain.gain.setValueAtTime(0.18, audioCtx.currentTime);
                 gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.25);
-                osc.connect(gain); gain.connect(audioCtx.destination);
-                osc.start(); osc.stop(audioCtx.currentTime + 0.25);
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.25);
             } catch(e){}
         }
 
@@ -328,7 +342,6 @@
             setTimeout(() => el.classList.remove('show'), 1600);
         }
 
-        /* ------------------ ক্যানভাস রেন্ডারিং ------------------ */
         function drawBoard() {
             ctx.clearRect(0, 0, C_SIZE, C_SIZE);
 
@@ -505,7 +518,6 @@
             ctx.restore();
         }
 
-        /* ------------------ ডাইস ইঞ্জিন ------------------ */
         function renderDicePips(val) {
             const d = document.getElementById('dice');
             d.innerHTML = '';
@@ -594,7 +606,6 @@
             }
         });
 
-        /* ------------------ চাল ও বোনাস মেকানিক্স ------------------ */
         function moveToken(color, idx) {
             isMoving = true;
             let cur = tokens[color][idx];
