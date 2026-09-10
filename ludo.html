@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Royal Ludo Championship</title>
+    <style>
+        :root {
+            --bg-felt: #0c4d2d;
+            --felt-light: #188651;
+            --gold: #ffd700;
+            --gold-btn: linear-gradient(180deg, #ecd58a 0%, #a88434 100%);
+            --wood: #2a1607;
+            
+            /* High-Contrast Ludo Colors */
+            --red: #e71d36;
+            --green: #2ec4b6;
+            --yellow: #ff9f1c;
+            --blue: #011627;
+            --blue-cell: #1d72b8;
+        }
+
+        * {
+            box-sizing: border-box; margin: 0; padding: 0;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            user-select: none; -webkit-tap-highlight-color: transparent;
+        }
+
+        html, body {
+            width: 100%; height: 100%; min-height: 100%;
+            background: #05140d; overflow: hidden;
+        }
+
+        #game-screen {
+            width: 100vw; height: 100vh; max-width: 480px; margin: 0 auto;
+            background: radial-gradient(circle at 50% 30%, var(--felt-light) 0%, var(--bg-felt) 70%, #03150c 100%);
+            display: flex; flex-direction: column; justify-content: space-between;
+            position: relative; overflow: hidden;
+        }
+
+        .top-bar {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 8px 14px; background: rgba(0,0,0,0.5); z-index: 50;
+            border-bottom: 2px solid rgba(255, 215, 0, 0.4);
+        }
+        .circle-btn {
+            width: 36px; height: 36px; background: #bfa15f; border: 2px solid #ecd58a;
+            border-radius: 8px; display: flex; align-items: center; justify-content: center;
+            font-size: 16px; cursor: pointer; box-shadow: 0 2px 5px rgba(0,0,0,0.4);
+        }
+        .circle-btn:active { transform: scale(0.92); }
+
+        .player-status-pill {
+            background: rgba(10, 25, 18, 0.95); border: 2px solid var(--gold);
+            padding: 5px 14px; border-radius: 20px; color: #fff; font-size: 12px; font-weight: 900;
+            letter-spacing: 0.5px; box-shadow: 0 0 10px rgba(0,0,0,0.5);
+        }
+
+        #hud-status {
+            position: absolute; top: 12%; left: 50%; transform: translate(-50%, -50%);
+            background: rgba(4, 25, 15, 0.96); border: 2px solid var(--gold);
+            padding: 6px 18px; border-radius: 20px; color: #fff; font-size: 12px;
+            font-weight: 900; text-transform: uppercase; letter-spacing: 1px;
+            box-shadow: 0 0 16px rgba(255, 215, 0, 0.5); z-index: 100; pointer-events: none;
+            transition: all 0.25s ease-out; opacity: 0; text-align: center;
+        }
+        #hud-status.show { opacity: 1; }
+
+        /* ================= ULTRA-CLEAR HD LUDO BOARD ================= */
+        #board-wrapper {
+            width: 95vw; max-width: 430px; height: 95vw; max-height: 430px;
+            margin: auto; background: #ffffff;
+            border: 8px solid var(--wood);
+            border-radius: 14px;
+            box-shadow: 0 12px 35px rgba(0,0,0,0.85), 0 0 20px rgba(255,215,0,0.3);
+            display: grid; grid-template-columns: repeat(15, 1fr); grid-template-rows: repeat(15, 1fr);
+            position: relative; overflow: hidden;
+        }
+
+        /* স্পষ্ট ঘর ও রেখা */
+        .cell {
+            border: 1px solid #444; background: #ffffff;
+            display: flex; align-items: center; justify-content: center; position: relative;
+        }
+
+        /* ৪টি প্রধান হোম বেস */
+        .base-box {
+            position: absolute; width: 40%; height: 40%;
+            display: flex; align-items: center; justify-content: center;
+            box-shadow: inset 0 0 15px rgba(0,0,0,0.3);
+            border: 1.5px solid #222;
+        }
+        .base-inner {
+            width: 74%; height: 74%; background: #ffffff; border-radius: 14px;
+            display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr;
+            padding: 8px; gap: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.4);
+            border: 2px solid #333;
+        }
+        .base-slot {
+            background: #f0f0f0; border-radius: 50%;
+            border: 2px dashed #999;
+            display: flex; align-items: center; justify-content: center;
+        }
+
+        #base-red { top: 0; left: 0; background: var(--red); }
+        #base-green { top: 0; right: 0; background: var(--green); }
+        #base-yellow { bottom: 0; right: 0; background: var(--yellow); }
+        #base-blue { bottom: 0; left: 0; background: var(--blue-cell); }
+
+        /* মাঝখানের হোম ট্রায়াঙ্গেল */
+        #center-home {
+            position: absolute; top: 40%; left: 40%; width: 20%; height: 20%;
+            background: #fff; border: 1.5px solid #333; overflow: hidden;
+        }
+        .triangle { position: absolute; width: 0; height: 0; border-style: solid; }
+        .tri-red { top: 0; left: 0; border-width: 43px 0 43px 43px; border-color: transparent transparent transparent var(--red); }
+        .tri-green { top: 0; left: 0; border-width: 43px 43px 0 43px; border-color: var(--green) transparent transparent transparent; }
+        .tri-yellow { top: 0; right: 0; border-width: 43px 43px 43px 0; border-color: transparent var(--yellow) transparent transparent; }
+        .tri-blue { bottom: 0; left: 0; border-width: 0 43px 43px 43px; border-color: transparent transparent var(--blue-cell) transparent; }
+
+        /* উজ্জ্বল হোম কালার পাথওয়ে */
+        .path-red { background: var(--red) !important; }
+        .path-green { background: var(--green) !important; }
+        .path-yellow { background: var(--yellow) !important; }
+        .path-blue { background: var(--blue-cell) !important; }
+
+        .star-mark::after {
+            content: '★'; font-size: 16px; color: var(--gold); font-weight: 900;
+            text-shadow: 0 1px 2px #000;
+        }
+
+        /* ৩ডি প্রিমিয়াম টোকেন (ঘুঁটি) */
+        .token {
+            width: 24px; height: 24px; border-radius: 50%; position: absolute;
+            border: 2px solid #ffffff; box-shadow: 0 5px 10px rgba(0,0,0,0.7);
+            z-index: 35; cursor: pointer; transition: all 0.22s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .token::after {
+            content: ''; width: 8px; height: 8px; background: rgba(255,255,255,0.85);
+            border-radius: 50%; position: absolute; top: 2px; left: 3px;
+        }
+        .token.highlight {
+            transform: scale(1.35); animation: tokenGlow 0.5s infinite alternate;
+            border-color: var(--gold); box-shadow: 0 0 14px var(--gold);
+        }
+        @keyframes tokenGlow { from { transform: scale(1.15); } to { transform: scale(1.4); } }
+
+        .tok-red { background: radial-gradient(circle at 35% 35%, #ff7675, var(--red)); }
+        .tok-green { background: radial-gradient(circle at 35% 35%, #55efc4, var(--green)); }
+        .tok-yellow { background: radial-gradient(circle at 35% 35%, #ffeaa7, var(--yellow)); }
+        .tok-blue { background: radial-gradient(circle at 35% 35%, #74b9ff, var(--blue-cell)); }
+
+        /* ================= বাস্তবসম্মত ৩ডি ডাইস (ছক্কা) ================= */
+        #control-panel {
+            width: 100%; padding: 12px 20px; display: flex;
+            justify-content: space-between; align-items: center;
+            background: rgba(0,0,0,0.6); border-top: 2px solid rgba(255,215,0,0.3);
+            z-index: 50;
+        }
+
+        .dice-area {
+            display: flex; align-items: center; gap: 14px;
+        }
+
+        .real-dice {
+            width: 62px; height: 62px; background: #ffffff;
+            border-radius: 14px;
+            box-shadow: 0 8px 18px rgba(0,0,0,0.65), inset 0 -3px 6px rgba(0,0,0,0.2), inset 0 3px 6px rgba(255,255,255,0.9);
+            border: 2px solid #ddd;
+            display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(3, 1fr);
+            padding: 8px; cursor: pointer; position: relative;
+            transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .real-dice:active { transform: scale(0.92); }
+
+        .real-dice.rolling {
+            animation: diceSpin 0.5s cubic-bezier(0.2, 0.8, 0.3, 1.2);
+        }
+
+        @keyframes diceSpin {
+            0% { transform: rotate(0deg) scale(0.85); }
+            30% { transform: rotate(180deg) scale(1.2); }
+            70% { transform: rotate(300deg) scale(1.1); }
+            100% { transform: rotate(360deg) scale(1); }
+        }
+
+        /* ছক্কার খোদাই করা বিন্দু (Pips) */
+        .pip {
+            width: 10px; height: 10px; background: #222; border-radius: 50%;
+            align-self: center; justify-self: center;
+            box-shadow: inset 0 1px 2px rgba(0,0,0,0.8);
+        }
+        .pip.red-pip { background: #d63031 !important; width: 14px; height: 14px; } /* ১ ফোঁটার বড় লাল বিন্দু */
+
+        .generic-modal {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            width: 90%; max-width: 320px; background: #18222d; border: 2px solid #bfa15f;
+            border-radius: 14px; padding: 18px; color: #fff; z-index: 200;
+            display: none; flex-direction: column; align-items: center; box-shadow: 0 15px 50px rgba(0,0,0,0.9);
+        }
+        .modal-btn {
+            background: var(--gold-btn); border: 2px solid #fff; color: #3b2803;
+            font-size: 15px; font-weight: bold; height: 40px; border-radius: 8px; cursor: pointer;
+            width: 100%; margin-top: 14px;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="game-screen">
+        <div class="top-bar">
+            <div class="circle-btn" onclick="window.location.href='index.html'" title="Main Menu">🏠</div>
+            <div class="player-status-pill" id="turn-indicator">RED'S TURN (YOU)</div>
+            <div class="circle-btn" onclick="restartLudo()">🔄</div>
+        </div>
+
+        <div id="hud-status">Roll Dice!</div>
+
+        <!-- ১৫x১৫ হাই-ডেফিনিশন লুডু বোর্ড -->
+        <div id="board-wrapper">
+            <!-- ৪টি বেস -->
+            <div class="base-box" id="base-red">
+                <div class="base-inner">
+                    <div class="base-slot" id="slot-r-0"></div><div class="base-slot" id="slot-r-1"></div>
+                    <div class="base-slot" id="slot-r-2"></div><div class="base-slot" id="slot-r-3"></div>
+                </div>
+            </div>
+            <div class="base-box" id="base-green">
+                <div class="base-inner">
+                    <div class="base-slot" id="slot-g-0"></div><div class="base-slot" id="slot-g-1"></div>
+                    <div class="base-slot" id="slot-g-2"></div><div class="base-slot" id="slot-g-3"></div>
+                </div>
+            </div>
+            <div class="base-box" id="base-yellow">
+                <div class="base-inner">
+                    <div class="base-slot" id="slot-y-0"></div><div class="base-slot" id="slot-y-1"></div>
+                    <div class="base-slot" id="slot-y-2"></div><div class="base-slot" id="slot-y-3"></div>
+                </div>
+            </div>
+            <div class="base-box" id="base-blue">
+                <div class="base-inner">
+                    <div class="base-slot" id="slot-b-0"></div><div class="base-slot" id="slot-b-1"></div>
+                    <div class="base-slot" id="slot-b-2"></div><div class="base-slot" id="slot-b-3"></div>
+                </div>
+            </div>
+
+            <!-- সেন্টার হোম -->
+            <div id="center-home">
+                <div class="triangle tri-red"></div>
+                <div class="triangle tri-green"></div>
+                <div class="triangle tri-yellow"></div>
+                <div class="triangle tri-blue"></div>
+            </div>
+        </div>
+
+        <!-- ৩ডি ডাইস কন্ট্রোল বার -->
+        <div id="control-panel">
+            <div>
+                <div style="font-size: 11px; color: #aaa;">CURRENT TURN:</div>
+                <div style="font-size: 16px; font-weight: 900; color: var(--red);" id="active-player-name">RED (YOU)</div>
+            </div>
+
+            <div class="dice-area">
+                <div style="font-size: 11px; color: var(--gold); font-weight: bold; text-align: right;" id="dice-hint">
+                    TAP TO ROLL
+                </div>
+                <!-- ৩ডি রিয়ালিস্টিক ডাইস কিউব -->
+                <div class="real-dice" id="dice" onclick="handleDiceClick()">
+                    <!-- শুরুতে ১ নম্বর ডট থাকবে -->
+                    <div></div><div></div><div></div>
+                    <div></div><div class="pip red-pip"></div><div></div>
+                    <div></div><div></div><div></div>
+                </div>
+            </div>
+        </div>
+
+        <div id="win-modal" class="generic-modal">
+            <div style="font-size: 36px; margin-bottom: 6px;">👑</div>
+            <div style="font-size: 18px; font-weight: 900; color: var(--gold);" id="win-title">CHAMPION!</div>
+            <div style="font-size: 12px; color: #ccc; margin-top: 4px;" id="win-desc">You conquered the Ludo board!</div>
+            <button class="modal-btn" onclick="restartLudo()">PLAY AGAIN</button>
+        </div>
+    </div>
+
+    <script>
+        const PLAYERS = ['red', 'green', 'yellow', 'blue'];
+
+        // ৫২টি কমন পথের মেট্রিক্স কো-অর্ডিনেট
+        const COMMON_PATH = [
+            [6,1], [6,2], [6,3], [6,4], [6,5], [5,6], [4,6], [3,6], [2,6], [1,6], [0,6],
+            [0,7], [0,8], [1,8], [2,8], [3,8], [4,8], [5,8], [6,9], [6,10], [6,11], [6,12], [6,13], [6,14],
+            [7,14], [8,14], [8,13], [8,12], [8,11], [8,10], [8,9], [9,8], [10,8], [11,8], [12,8], [13,8], [14,8],
+            [14,7], [14,6], [13,6], [12,6], [11,6], [10,6], [9,6], [8,5], [8,4], [8,3], [8,2], [8,1], [8,0],
+            [7,0], [6,0]
+        ];
+
+        // স্টার চিহ্নিত নিরাপদ ঘরসমূহ
+        const SAFE_COORDS = [
+            [6,1], [2,8], [1,8], [8,13], [12,6], [13,6], [8,2]
+        ];
+
+        const START_OFFSET = { red: 0, green: 13, yellow: 26, blue: 39 };
+        const HOME_STRETCH = {
+            red: [[7,1], [7,2], [7,3], [7,4], [7,5], [7,6]],
+            green: [[1,7], [2,7], [3,7], [4,7], [5,7], [6,7]],
+            yellow: [[7,13], [7,12], [7,11], [7,10], [7,9], [7,8]],
+            blue: [[13,7], [12,7], [11,7], [10,7], [9,7], [8,7]]
+        };
+
+        let currentTurnIdx = 0;
+        let diceVal = 1;
+        let canRoll = true;
+        let isMoving = false;
+
+        let tokens = {
+            red: [-1, -1, -1, -1],
+            green: [-1, -1, -1, -1],
+            yellow: [-1, -1, -1, -1],
+            blue: [-1, -1, -1, -1]
+        };
+
+        /* ------------------ সাউন্ড ইঞ্জিন ------------------ */
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+        function playDiceRollSound() {
+            try {
+                if (audioCtx.state === 'suspended') audioCtx.resume();
+                for (let i = 0; i < 7; i++) {
+                    setTimeout(() => {
+                        const osc = audioCtx.createOscillator();
+                        const gain = audioCtx.createGain();
+                        osc.type = 'triangle';
+                        osc.frequency.setValueAtTime(320 + Math.random() * 250, audioCtx.currentTime);
+                        gain.gain.setValueAtTime(0.12, audioCtx.currentTime);
+                        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.05);
+                        osc.connect(gain);
+                        gain.connect(audioCtx.destination);
+                        osc.start();
+                        osc.stop(audioCtx.currentTime + 0.05);
+                    }, i * 55);
+                }
+            } catch(e){}
+        }
+
+        function playTokenStepSound() {
+            try {
+                if (audioCtx.state === 'suspended') audioCtx.resume();
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(650, audioCtx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(320, audioCtx.currentTime + 0.07);
+                gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.07);
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.07);
+            } catch(e){}
+        }
+
+        function playCaptureSound() {
+            try {
+                if (audioCtx.state === 'suspended') audioCtx.resume();
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(240, audioCtx.currentTime);
+                osc.frequency.linearRampToValueAtTime(100, audioCtx.currentTime + 0.28);
+                gain.gain.setValueAtTime(0.18, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.28);
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.28);
+            } catch(e){}
+        }
+
+        function setHUD(text) {
+            const el = document.getElementById('hud-status');
+            el.innerText = text; el.classList.add('show');
+            setTimeout(() => el.classList.remove('show'), 1500);
+        }
+
+        /* ------------------ গ্রিড তৈরি ------------------ */
+        function buildGrid() {
+            const board = document.getElementById('board-wrapper');
+            for (let r = 0; r < 15; r++) {
+                for (let c = 0; c < 15; c++) {
+                    if ((r < 6 && c < 6) || (r < 6 && c > 8) || (r > 8 && c < 6) || (r > 8 && c > 8) || (r >= 6 && r <= 8 && c >= 6 && c <= 8)) {
+                        continue;
+                    }
+                    const cell = document.createElement('div');
+                    cell.className = 'cell';
+                    cell.id = `cell-${r}-${c}`;
+
+                    // হোম পাথওয়ে
+                    if (r === 7 && c >= 1 && c <= 5) cell.classList.add('path-red');
+                    if (c === 7 && r >= 1 && r <= 5) cell.classList.add('path-green');
+                    if (r === 7 && c >= 9 && c <= 13) cell.classList.add('path-yellow');
+                    if (c === 7 && r >= 9 && r <= 13) cell.classList.add('path-blue');
+
+                    // স্টার্ট সেল
+                    if (r === 6 && c === 1) cell.classList.add('path-red');
+                    if (r === 1 && c === 8) cell.classList.add('path-green');
+                    if (r === 8 && c === 13) cell.classList.add('path-yellow');
+                    if (r === 13 && c === 6) cell.classList.add('path-blue');
+
+                    // স্টার মার্ক (Safe Cells)
+                    SAFE_COORDS.forEach(([sr, sc]) => {
+                        if (r === sr && c === sc) cell.classList.add('star-mark');
+                    });
+
+                    board.appendChild(cell);
+                }
+            }
+            createTokens();
+            renderTokens();
+        }
+
+        function createTokens() {
+            PLAYERS.forEach(color => {
+                for (let i = 0; i < 4; i++) {
+                    const tok = document.createElement('div');
+                    tok.className = `token tok-${color}`;
+                    tok.id = `token-${color}-${i}`;
+                    tok.onclick = () => onTokenClick(color, i);
+                    document.getElementById('board-wrapper').appendChild(tok);
+                }
+            });
+        }
+
+        function renderTokens() {
+            PLAYERS.forEach(color => {
+                tokens[color].forEach((step, idx) => {
+                    const tokEl = document.getElementById(`token-${color}-${idx}`);
+                    if (step === -1) {
+                        const slot = document.getElementById(`slot-${color[0]}-${idx}`).getBoundingClientRect();
+                        const bRect = document.getElementById('board-wrapper').getBoundingClientRect();
+                        tokEl.style.left = (slot.left - bRect.left + (slot.width/2 - 12)) + 'px';
+                        tokEl.style.top = (slot.top - bRect.top + (slot.height/2 - 12)) + 'px';
+                    } else if (step >= 0 && step <= 50) {
+                        const pathIdx = (START_OFFSET[color] + step) % 52;
+                        const [r, c] = COMMON_PATH[pathIdx];
+                        placeTokenAtCell(tokEl, r, c);
+                    } else if (step >= 51 && step <= 56) {
+                        const [r, c] = HOME_STRETCH[color][step - 51];
+                        placeTokenAtCell(tokEl, r, c);
+                    } else {
+                        tokEl.style.display = 'none';
+                    }
+                });
+            });
+        }
+
+        function placeTokenAtCell(tokEl, r, c) {
+            const cell = document.getElementById(`cell-${r}-${c}`);
+            if (!cell) return;
+            const cRect = cell.getBoundingClientRect();
+            const bRect = document.getElementById('board-wrapper').getBoundingClientRect();
+            tokEl.style.left = (cRect.left - bRect.left + (cRect.width/2 - 12)) + 'px';
+            tokEl.style.top = (cRect.top - bRect.top + (cRect.height/2 - 12)) + 'px';
+        }
+
+        /* ------------------ রিয়ালিস্টিক ডাইস গ্রাফিক্স রেন্ডারার ------------------ */
+        function renderDicePips(val) {
+            const d = document.getElementById('dice');
+            d.innerHTML = '';
+
+            // ৯টি গ্রিড স্লটের ম্যাপিং
+            let pips = [];
+            if (val === 1) pips = [4];
+            else if (val === 2) pips = [0, 8];
+            else if (val === 3) pips = [0, 4, 8];
+            else if (val === 4) pips = [0, 2, 6, 8];
+            else if (val === 5) pips = [0, 2, 4, 6, 8];
+            else if (val === 6) pips = [0, 2, 3, 5, 6, 8];
+
+            for (let i = 0; i < 9; i++) {
+                if (pips.includes(i)) {
+                    const pip = document.createElement('div');
+                    pip.className = 'pip';
+                    if (val === 1) pip.classList.add('red-pip');
+                    d.appendChild(pip);
+                } else {
+                    d.appendChild(document.createElement('div'));
+                }
+            }
+        }
+
+        function handleDiceClick() {
+            if (!canRoll || isMoving || currentTurnIdx !== 0) return;
+            rollDice();
+        }
+
+        function rollDice() {
+            canRoll = false;
+            const diceEl = document.getElementById('dice');
+            diceEl.classList.add('rolling');
+            playDiceRollSound();
+
+            setTimeout(() => {
+                diceEl.classList.remove('rolling');
+                diceVal = Math.floor(Math.random() * 6) + 1;
+                renderDicePips(diceVal);
+
+                const color = PLAYERS[currentTurnIdx];
+                const validMoves = getMovableTokens(color, diceVal);
+
+                if (validMoves.length === 0) {
+                    setHUD(`${color.toUpperCase()} has no moves`);
+                    setTimeout(nextTurn, 900);
+                } else if (validMoves.length === 1 && currentTurnIdx === 0) {
+                    moveToken(color, validMoves[0]);
+                } else if (currentTurnIdx === 0) {
+                    setHUD("Pick a token to move!");
+                    highlightTokens(color, validMoves);
+                } else {
+                    setTimeout(() => moveToken(color, validMoves[0]), 600);
+                }
+            }, 480);
+        }
+
+        function getMovableTokens(color, roll) {
+            let moves = [];
+            tokens[color].forEach((pos, idx) => {
+                if (pos === -1 && roll === 6) moves.push(idx);
+                else if (pos >= 0 && pos + roll <= 56) moves.push(idx);
+            });
+            return moves;
+        }
+
+        function highlightTokens(color, list) {
+            list.forEach(idx => {
+                document.getElementById(`token-${color}-${idx}`).classList.add('highlight');
+            });
+        }
+
+        function clearHighlights() {
+            document.querySelectorAll('.token').forEach(t => t.classList.remove('highlight'));
+        }
+
+        function onTokenClick(color, idx) {
+            if (currentTurnIdx !== 0 || canRoll || isMoving) return;
+            const valid = getMovableTokens(color, diceVal);
+            if (valid.includes(idx)) {
+                clearHighlights();
+                moveToken(color, idx);
+            }
+        }
+
+        function moveToken(color, idx) {
+            isMoving = true;
+            clearHighlights();
+            let cur = tokens[color][idx];
+
+            if (cur === -1 && diceVal === 6) {
+                tokens[color][idx] = 0;
+                playTokenStepSound();
+            } else {
+                tokens[color][idx] += diceVal;
+                playTokenStepSound();
+            }
+
+            renderTokens();
+
+            setTimeout(() => {
+                checkCapture(color, idx);
+                isMoving = false;
+
+                if (tokens[color].every(p => p >= 56)) {
+                    showWinModal(color);
+                    return;
+                }
+
+                if (diceVal === 6) {
+                    canRoll = true;
+                    setHUD("Rolled 6! Roll Again");
+                    if (currentTurnIdx !== 0) setTimeout(rollDice, 800);
+                } else {
+                    nextTurn();
+                }
+            }, 300);
+        }
+
+        function checkCapture(color, idx) {
+            const myPos = tokens[color][idx];
+            if (myPos < 0 || myPos > 50) return;
+
+            const myGlobalIdx = (START_OFFSET[color] + myPos) % 52;
+            const [myR, myC] = COMMON_PATH[myGlobalIdx];
+
+            // নিরাপদ ঘর কি না
+            const isSafe = SAFE_COORDS.some(([sr, sc]) => sr === myR && sc === myC);
+            if (isSafe) return;
+
+            PLAYERS.forEach(opp => {
+                if (opp === color) return;
+                tokens[opp].forEach((oppPos, oppIdx) => {
+                    if (oppPos >= 0 && oppPos <= 50) {
+                        const oppGlobalIdx = (START_OFFSET[opp] + oppPos) % 52;
+                        if (oppGlobalIdx === myGlobalIdx) {
+                            tokens[opp][oppIdx] = -1;
+                            playCaptureSound();
+                            setHUD(`${color.toUpperCase()} Captured ${opp.toUpperCase()}!`);
+                            renderTokens();
+                        }
+                    }
+                });
+            });
+        }
+
+        function nextTurn() {
+            currentTurnIdx = (currentTurnIdx + 1) % 4;
+            const color = PLAYERS[currentTurnIdx];
+            document.getElementById('turn-indicator').innerText = `${color.toUpperCase()}'S TURN`;
+            document.getElementById('active-player-name').innerText = (color === 'red' ? 'RED (YOU)' : color.toUpperCase());
+            document.getElementById('active-player-name').style.color = (color === 'blue' ? '#3498db' : `var(--${color})`);
+            canRoll = true;
+
+            if (currentTurnIdx !== 0) {
+                document.getElementById('dice-hint').innerText = "AI THINKING...";
+                setTimeout(rollDice, 850);
+            } else {
+                document.getElementById('dice-hint').innerText = "TAP TO ROLL";
+            }
+        }
+
+        function showWinModal(color) {
+            const isUser = (color === 'red');
+            document.getElementById('win-title').innerText = isUser ? "YOU WON! 👑" : `${color.toUpperCase()} WON!`;
+            document.getElementById('win-desc').innerText = isUser ? "Fantastic Strategy! You conquered the board." : "Bot finished first. Play again to win!";
+            document.getElementById('win-modal').style.display = 'flex';
+        }
+
+        function restartLudo() {
+            document.getElementById('win-modal').style.display = 'none';
+            currentTurnIdx = 0;
+            canRoll = true;
+            isMoving = false;
+            tokens = { red: [-1,-1,-1,-1], green: [-1,-1,-1,-1], yellow: [-1,-1,-1,-1], blue: [-1,-1,-1,-1] };
+            renderDicePips(1);
+            document.getElementById('turn-indicator').innerText = "RED'S TURN (YOU)";
+            document.getElementById('active-player-name').innerText = 'RED (YOU)';
+            document.getElementById('active-player-name').style.color = 'var(--red)';
+            document.getElementById('dice-hint').innerText = "TAP TO ROLL";
+            renderTokens();
+        }
+
+        window.onload = () => {
+            buildGrid();
+            renderDicePips(1);
+        };
+    </script>
+</body>
+</html>
