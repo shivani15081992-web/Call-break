@@ -32,7 +32,7 @@
         /* Top Header */
         .top-bar {
             width: 100%; display: flex; justify-content: space-between; align-items: center;
-            padding: 8px 12px; background: rgba(0,0,0,0.55); z-index: 50;
+            padding: 6px 12px; background: rgba(0,0,0,0.55); z-index: 50;
             border-bottom: 2px solid rgba(255, 215, 0, 0.4); flex-shrink: 0;
         }
         .circle-btn {
@@ -49,7 +49,7 @@
         }
 
         #hud-status {
-            position: absolute; top: 10%; left: 50%; transform: translate(-50%, -50%);
+            position: absolute; top: 9%; left: 50%; transform: translate(-50%, -50%);
             background: rgba(4, 25, 15, 0.96); border: 2px solid var(--gold);
             padding: 5px 16px; border-radius: 20px; color: #fff; font-size: 11px;
             font-weight: 900; text-transform: uppercase; letter-spacing: 1px;
@@ -58,30 +58,30 @@
         }
         #hud-status.show { opacity: 1; }
 
-        /* Board Container: কোনো অবস্থাতেই ছক্কার জায়গা কাটবে না */
+        /* Board Container: সম্পূর্ণ দৃশ্যমান ও বড় সাইজ */
         #board-wrapper-area {
-            flex: 1; width: 100%; display: flex;
+            flex: 1; width: 100%; min-height: 0; display: flex;
             align-items: center; justify-content: center;
-            padding: 4px; overflow: hidden;
+            padding: 2px 8px; overflow: hidden;
         }
 
         #board-container {
-            width: min(92vw, calc(100dvh - 165px));
-            height: min(92vw, calc(100dvh - 165px));
-            max-width: 420px; max-height: 420px;
-            border: 6px solid #2d1808; border-radius: 14px;
+            width: min(96vw, calc(100dvh - 145px));
+            height: min(96vw, calc(100dvh - 145px));
+            max-width: 440px; max-height: 440px;
+            border: 6px solid #2d1808; border-radius: 12px;
             box-shadow: 0 8px 25px rgba(0,0,0,0.85), 0 0 15px rgba(255,215,0,0.3);
             background: #fff; position: relative;
         }
 
         canvas {
-            width: 100%; height: 100%; display: block; border-radius: 8px;
+            width: 100%; height: 100%; display: block; border-radius: 6px;
         }
 
-        /* 3D Dice Control Panel: অ্যাপ মোডে ১০০% সুরক্ষিত */
+        /* 3D Dice Control Panel: অ্যাপ্লিকেশনে কোনোভাবেই কাটবে না */
         #control-panel {
             width: 100%;
-            padding: 8px 18px max(14px, env(safe-area-inset-bottom, 14px)) 18px;
+            padding: 6px 16px max(10px, env(safe-area-inset-bottom, 10px)) 16px;
             display: flex; justify-content: space-between; align-items: center;
             background: rgba(0,0,0,0.85); border-top: 2px solid rgba(255,215,0,0.4);
             z-index: 50; flex-shrink: 0;
@@ -112,7 +112,7 @@
 
         @keyframes proDiceRoll {
             0% { transform: rotate(0deg) scale(0.9); }
-            40% { transform: rotate(180deg) scale(1.15); box-shadow: 0 12px 20px rgba(255,215,0,0.5); }
+            40% { transform: rotate(180deg) scale(1.15); box-shadow: 0 14px 22px rgba(255,215,0,0.5); }
             80% { transform: rotate(320deg) scale(1.05); }
             100% { transform: rotate(360deg) scale(1); }
         }
@@ -128,6 +128,7 @@
             box-shadow: inset 0 2px 4px rgba(0,0,0,0.7), 0 0 6px rgba(255,71,87,0.6);
         }
 
+        /* Generic Modal */
         .generic-modal {
             position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
             width: 90%; max-width: 320px; background: #18222d; border: 2px solid #bfa15f;
@@ -136,8 +137,8 @@
         }
         .modal-btn {
             background: var(--gold-btn); border: 2px solid #fff; color: #3b2803;
-            font-size: 15px; font-weight: bold; height: 40px; border-radius: 8px; cursor: pointer;
-            width: 100%; margin-top: 14px;
+            font-size: 14px; font-weight: bold; height: 40px; border-radius: 8px; cursor: pointer;
+            width: 100%; margin-top: 10px;
         }
     </style>
 </head>
@@ -146,24 +147,24 @@
     <div id="game-screen">
         <div class="top-bar">
             <div class="circle-btn" onclick="window.location.href='index.html'" title="Main Menu">🏠</div>
-            <div class="player-status-pill" id="turn-indicator">RED'S TURN (YOU)</div>
-            <div class="circle-btn" onclick="restartLudo()">🔄</div>
+            <div class="player-status-pill" id="turn-indicator">RED'S TURN</div>
+            <div class="circle-btn" onclick="openModeModal()" title="Game Mode">⚙️</div>
         </div>
 
         <div id="hud-status">Roll Dice!</div>
 
-        <!-- অটো-এডজাস্টেবল ক্যানভাস এলাকা -->
+        <!-- ক্যানভাস এলাকা -->
         <div id="board-wrapper-area">
             <div id="board-container">
                 <canvas id="ludoCanvas" width="600" height="600"></canvas>
             </div>
         </div>
 
-        <!-- ৩ডি ডাইস কন্ট্রোল বার -->
+        <!-- কন্ট্রোল প্যানেল -->
         <div id="control-panel">
             <div>
-                <div style="font-size: 10px; color: #aaa; font-weight: bold;">CURRENT TURN:</div>
-                <div style="font-size: 15px; font-weight: 900; color: #e71d36;" id="active-player-name">RED (YOU)</div>
+                <div style="font-size: 10px; color: #aaa; font-weight: bold;" id="mode-label">MODE: VS BOT</div>
+                <div style="font-size: 15px; font-weight: 900; color: #e71d36;" id="active-player-name">RED</div>
             </div>
 
             <div class="dice-area">
@@ -178,12 +179,21 @@
             </div>
         </div>
 
+        <!-- গেম মোড সিলেকশন মোডাল (২ জন / ৪ জন / বট) -->
+        <div id="mode-modal" class="generic-modal">
+            <div style="font-size: 18px; font-weight: 900; color: var(--gold); margin-bottom: 6px;">SELECT GAME MODE</div>
+            <div style="font-size: 11px; color: #ccc; margin-bottom: 12px; text-align: center;">একই ফোন থেকে অফলাইনে খেলুন</div>
+            <button class="modal-btn" onclick="setGameMode('bot')">🤖 VS COMPUTER (1 Player)</button>
+            <button class="modal-btn" style="background:#2ecc71; color:#000;" onclick="setGameMode('2p')">👥 2 PLAYERS (Red vs Yellow)</button>
+            <button class="modal-btn" style="background:#3498db; color:#fff;" onclick="setGameMode('4p')">👨‍👩‍👧‍👦 4 PLAYERS (Pass & Play)</button>
+        </div>
+
         <!-- Win Modal -->
         <div id="win-modal" class="generic-modal">
             <div style="font-size: 36px; margin-bottom: 6px;">👑</div>
             <div style="font-size: 18px; font-weight: 900; color: var(--gold);" id="win-title">CHAMPION!</div>
-            <div style="font-size: 12px; color: #ccc; margin-top: 4px;" id="win-desc">You conquered the Ludo board!</div>
-            <button class="modal-btn" onclick="restartLudo()">PLAY AGAIN</button>
+            <div style="font-size: 12px; color: #ccc; margin-top: 4px;" id="win-desc">Winner reached home!</div>
+            <button class="modal-btn" onclick="openModeModal()">PLAY AGAIN</button>
         </div>
     </div>
 
@@ -191,7 +201,7 @@
         const canvas = document.getElementById('ludoCanvas');
         const ctx = canvas.getContext('2d');
         const C_SIZE = 600;
-        const CELL = C_SIZE / 15;
+        const CELL = C_SIZE / 15; // 40px
 
         const COLORS = {
             red: '#e71d36',
@@ -200,8 +210,10 @@
             blue: '#1e88e5'
         };
 
-        const PLAYERS = ['red', 'green', 'yellow', 'blue'];
+        let activePlayers = ['red', 'green', 'yellow', 'blue'];
+        let gameMode = 'bot'; // 'bot', '2p', '4p'
 
+        // ৫২টি ঘরের ঘড়ির কাঁটার দিকের ট্র্যাক
         const TRACK = [
             [6,1],[6,2],[6,3],[6,4],[6,5],
             [5,6],[4,6],[3,6],[2,6],[1,6],[0,6],
@@ -220,14 +232,14 @@
         const START_IDX = { red: 0, green: 13, yellow: 26, blue: 39 };
 
         const SAFE_STARS = [
-            [6, 1],
-            [8, 2],
-            [1, 8],
-            [2, 6],
-            [8, 13],
-            [6, 12],
-            [13, 6],
-            [12, 8]
+            [6, 1],  // Red Start
+            [8, 2],  // Red Safe
+            [1, 8],  // Green Start
+            [2, 6],  // Green Safe
+            [8, 13], // Yellow Start
+            [6, 12], // Yellow Safe
+            [13, 6], // Blue Start
+            [12, 8]  // Blue Safe
         ];
 
         const START_ARROWS = [
@@ -263,6 +275,7 @@
             blue: [-1, -1, -1, -1]
         };
 
+        /* ------------------ সাউন্ড ইঞ্জিন ------------------ */
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
         function playDiceRollSound() {
@@ -276,10 +289,8 @@
                         osc.frequency.setValueAtTime(320 + Math.random() * 250, audioCtx.currentTime);
                         gain.gain.setValueAtTime(0.12, audioCtx.currentTime);
                         gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.05);
-                        osc.connect(gain);
-                        gain.connect(audioCtx.destination);
-                        osc.start();
-                        osc.stop(audioCtx.currentTime + 0.05);
+                        osc.connect(gain); gain.connect(audioCtx.destination);
+                        osc.start(); osc.stop(audioCtx.currentTime + 0.05);
                     }, i * 55);
                 }
             } catch(e){}
@@ -295,10 +306,8 @@
                 osc.frequency.exponentialRampToValueAtTime(320, audioCtx.currentTime + 0.07);
                 gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
                 gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.07);
-                osc.connect(gain);
-                gain.connect(audioCtx.destination);
-                osc.start();
-                osc.stop(audioCtx.currentTime + 0.07);
+                osc.connect(gain); gain.connect(audioCtx.destination);
+                osc.start(); osc.stop(audioCtx.currentTime + 0.07);
             } catch(e){}
         }
 
@@ -312,10 +321,8 @@
                 osc.frequency.linearRampToValueAtTime(100, audioCtx.currentTime + 0.28);
                 gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
                 gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.28);
-                osc.connect(gain);
-                gain.connect(audioCtx.destination);
-                osc.start();
-                osc.stop(audioCtx.currentTime + 0.28);
+                osc.connect(gain); gain.connect(audioCtx.destination);
+                osc.start(); osc.stop(audioCtx.currentTime + 0.28);
             } catch(e){}
         }
 
@@ -329,10 +336,8 @@
                 osc.frequency.setValueAtTime(659.25, audioCtx.currentTime + 0.1);
                 gain.gain.setValueAtTime(0.18, audioCtx.currentTime);
                 gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.25);
-                osc.connect(gain);
-                gain.connect(audioCtx.destination);
-                osc.start();
-                osc.stop(audioCtx.currentTime + 0.25);
+                osc.connect(gain); gain.connect(audioCtx.destination);
+                osc.start(); osc.stop(audioCtx.currentTime + 0.25);
             } catch(e){}
         }
 
@@ -342,6 +347,7 @@
             setTimeout(() => el.classList.remove('show'), 1600);
         }
 
+        /* ------------------ ক্যানভাস ড্রয়িং ------------------ */
         function drawBoard() {
             ctx.clearRect(0, 0, C_SIZE, C_SIZE);
 
@@ -349,7 +355,7 @@
             ctx.fillRect(0, 0, C_SIZE, C_SIZE);
 
             ctx.strokeStyle = '#333333';
-            ctx.lineWidth = 1.2;
+            ctx.lineWidth = 1.4;
             for (let i = 0; i <= 15; i++) {
                 ctx.beginPath();
                 ctx.moveTo(i * CELL, 0); ctx.lineTo(i * CELL, C_SIZE);
@@ -432,8 +438,8 @@
         function drawOutlineStar(cx, cy) {
             ctx.save();
             ctx.strokeStyle = '#222222';
-            ctx.lineWidth = 1.8;
-            ctx.font = '24px sans-serif';
+            ctx.lineWidth = 2;
+            ctx.font = '26px sans-serif';
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
             ctx.strokeText('☆', cx, cy);
@@ -451,11 +457,11 @@
         }
 
         function drawAllTokens() {
-            PLAYERS.forEach(color => {
+            activePlayers.forEach(color => {
                 tokens[color].forEach((pos, idx) => {
                     if (pos === 56) return;
                     const coords = getTokenPixelPos(color, pos, idx);
-                    drawPinToken(coords.x, coords.y, COLORS[color], color === PLAYERS[currentTurnIdx]);
+                    drawPinToken(coords.x, coords.y, COLORS[color], color === activePlayers[currentTurnIdx]);
                 });
             });
         }
@@ -475,44 +481,49 @@
             return { x: 7.5 * CELL, y: 7.5 * CELL };
         }
 
+        /* ------------------ বড় সাইজের পিন-হেড ঘুঁটি ------------------ */
         function drawPinToken(x, y, color, isCurrentPlayer) {
             ctx.save();
-            y = y - 4;
+            y = y - 6;
 
+            // ১. বড় শ্যাডো
             ctx.beginPath();
-            ctx.ellipse(x + 2, y + 16, 9, 4.5, 0, 0, Math.PI * 2);
-            ctx.fillStyle = 'rgba(0,0,0,0.35)';
+            ctx.ellipse(x + 3, y + 20, 11, 5.5, 0, 0, Math.PI * 2);
+            ctx.fillStyle = 'rgba(0,0,0,0.38)';
             ctx.fill();
 
+            // ২. পিন হেড
             ctx.beginPath();
-            ctx.arc(x, y, 12, Math.PI * 0.8, Math.PI * 0.2, false);
-            ctx.lineTo(x, y + 16);
+            ctx.arc(x, y, 14.5, Math.PI * 0.8, Math.PI * 0.2, false);
+            ctx.lineTo(x, y + 20);
             ctx.closePath();
 
             ctx.fillStyle = '#ffffff';
             ctx.fill();
-            ctx.lineWidth = 1.8;
-            ctx.strokeStyle = '#333333';
+            ctx.lineWidth = 2;
+            ctx.strokeStyle = '#222222';
             ctx.stroke();
 
+            // ৩. সেন্ট্রাল ক্রিস্টাল
             ctx.beginPath();
-            ctx.arc(x, y, 7.5, 0, Math.PI * 2);
+            ctx.arc(x, y, 9.5, 0, Math.PI * 2);
             ctx.fillStyle = color;
             ctx.fill();
-            ctx.lineWidth = 1;
+            ctx.lineWidth = 1.2;
             ctx.strokeStyle = '#000000';
             ctx.stroke();
 
             ctx.beginPath();
-            ctx.arc(x - 2, y - 2, 2.5, 0, Math.PI * 2);
+            ctx.arc(x - 3, y - 3, 3, 0, Math.PI * 2);
             ctx.fillStyle = 'rgba(255,255,255,0.85)';
             ctx.fill();
 
-            if (isCurrentPlayer && !canRoll && !isMoving && currentTurnIdx === 0) {
+            // হাইলাইট রিং
+            if (isCurrentPlayer && !canRoll && !isMoving && isHumanTurn()) {
                 ctx.beginPath();
-                ctx.arc(x, y + 4, 18, 0, Math.PI * 2);
+                ctx.arc(x, y + 5, 22, 0, Math.PI * 2);
                 ctx.strokeStyle = '#ffd700';
-                ctx.lineWidth = 2.5;
+                ctx.lineWidth = 3;
                 ctx.stroke();
             }
             ctx.restore();
@@ -541,8 +552,13 @@
             }
         }
 
+        function isHumanTurn() {
+            if (gameMode === '2p' || gameMode === '4p') return true;
+            return currentTurnIdx === 0; // 'bot' মোডে শুধু Red হিউম্যান
+        }
+
         function handleDiceClick() {
-            if (!canRoll || isMoving || currentTurnIdx !== 0) return;
+            if (!canRoll || isMoving || !isHumanTurn()) return;
             rollDice();
         }
 
@@ -557,15 +573,15 @@
                 diceVal = Math.floor(Math.random() * 6) + 1;
                 renderDicePips(diceVal);
 
-                const color = PLAYERS[currentTurnIdx];
+                const color = activePlayers[currentTurnIdx];
                 const validMoves = getMovableTokens(color, diceVal);
 
                 if (validMoves.length === 0) {
-                    setHUD(`${color.toUpperCase()} no moves`);
+                    setHUD(`${color.toUpperCase()} has no moves`);
                     setTimeout(nextTurn, 800);
-                } else if (validMoves.length === 1 && currentTurnIdx === 0) {
+                } else if (validMoves.length === 1 && isHumanTurn()) {
                     moveToken(color, validMoves[0]);
-                } else if (currentTurnIdx === 0) {
+                } else if (isHumanTurn()) {
                     setHUD("Tap a token to move!");
                     drawBoard();
                 } else {
@@ -584,14 +600,14 @@
         }
 
         canvas.addEventListener('click', (e) => {
-            if (currentTurnIdx !== 0 || canRoll || isMoving) return;
+            if (!isHumanTurn() || canRoll || isMoving) return;
             const rect = canvas.getBoundingClientRect();
             const scaleX = canvas.width / rect.width;
             const scaleY = canvas.height / rect.height;
             const clickX = (e.clientX - rect.left) * scaleX;
             const clickY = (e.clientY - rect.top) * scaleY;
 
-            const color = 'red';
+            const color = activePlayers[currentTurnIdx];
             const valid = getMovableTokens(color, diceVal);
 
             for (let i = 0; i < valid.length; i++) {
@@ -599,7 +615,7 @@
                 const pos = tokens[color][tIdx];
                 const coords = getTokenPixelPos(color, pos, tIdx);
                 const dist = Math.hypot(clickX - coords.x, clickY - coords.y);
-                if (dist <= 26) {
+                if (dist <= 30) {
                     moveToken(color, tIdx);
                     break;
                 }
@@ -621,7 +637,7 @@
                 if (tokens[color][idx] === 56) {
                     gainedBonusTurn = true;
                     playHomeWinSound();
-                    setHUD(`${color.toUpperCase()} reached Home! (+1 Bonus Turn)`);
+                    setHUD(`${color.toUpperCase()} reached Home! (+1 Bonus)`);
                 }
             }
 
@@ -629,9 +645,7 @@
 
             setTimeout(() => {
                 const captured = checkCapture(color, idx);
-                if (captured) {
-                    gainedBonusTurn = true;
-                }
+                if (captured) gainedBonusTurn = true;
 
                 isMoving = false;
 
@@ -642,12 +656,10 @@
 
                 if (diceVal === 6 || gainedBonusTurn) {
                     canRoll = true;
-                    if (gainedBonusTurn && diceVal !== 6) {
-                        setHUD("Bonus Turn Granted! Roll Again");
-                    } else if (diceVal === 6) {
-                        setHUD("Rolled 6! Roll Again");
-                    }
-                    if (currentTurnIdx !== 0) setTimeout(rollDice, 800);
+                    if (gainedBonusTurn && diceVal !== 6) setHUD("Bonus Turn! Roll Again");
+                    else if (diceVal === 6) setHUD("Rolled 6! Roll Again");
+                    
+                    if (!isHumanTurn()) setTimeout(rollDice, 800);
                 } else {
                     nextTurn();
                 }
@@ -666,7 +678,7 @@
 
             let didCapture = false;
 
-            PLAYERS.forEach(opp => {
+            activePlayers.forEach(opp => {
                 if (opp === color) return;
                 tokens[opp].forEach((oppPos, oppIdx) => {
                     if (oppPos >= 0 && oppPos <= 50) {
@@ -674,7 +686,7 @@
                         if (oppTrackIdx === myTrackIdx) {
                             tokens[opp][oppIdx] = -1;
                             playCaptureSound();
-                            setHUD(`${color.toUpperCase()} Captured ${opp.toUpperCase()}! (+1 Bonus Turn)`);
+                            setHUD(`${color.toUpperCase()} Captured ${opp.toUpperCase()}! (+1 Bonus)`);
                             drawBoard();
                             didCapture = true;
                         }
@@ -686,16 +698,16 @@
         }
 
         function nextTurn() {
-            currentTurnIdx = (currentTurnIdx + 1) % 4;
-            const color = PLAYERS[currentTurnIdx];
+            currentTurnIdx = (currentTurnIdx + 1) % activePlayers.length;
+            const color = activePlayers[currentTurnIdx];
             document.getElementById('turn-indicator').innerText = `${color.toUpperCase()}'S TURN`;
-            document.getElementById('active-player-name').innerText = (color === 'red' ? 'RED (YOU)' : color.toUpperCase());
+            document.getElementById('active-player-name').innerText = color.toUpperCase();
             document.getElementById('active-player-name').style.color = COLORS[color];
             canRoll = true;
 
             drawBoard();
 
-            if (currentTurnIdx !== 0) {
+            if (!isHumanTurn()) {
                 document.getElementById('dice-hint').innerText = "AI THINKING...";
                 setTimeout(rollDice, 750);
             } else {
@@ -704,29 +716,49 @@
         }
 
         function showWinModal(color) {
-            const isUser = (color === 'red');
-            document.getElementById('win-title').innerText = isUser ? "YOU WON! 👑" : `${color.toUpperCase()} WON!`;
-            document.getElementById('win-desc').innerText = isUser ? "Incredible Strategy! You conquered the board." : "Bot reached home first. Better luck next time!";
+            document.getElementById('win-title').innerText = `${color.toUpperCase()} WON! 👑`;
+            document.getElementById('win-desc').innerText = `Congratulations! All tokens reached home.`;
             document.getElementById('win-modal').style.display = 'flex';
         }
 
-        function restartLudo() {
+        function openModeModal() {
             document.getElementById('win-modal').style.display = 'none';
+            document.getElementById('mode-modal').style.display = 'flex';
+        }
+
+        function setGameMode(mode) {
+            gameMode = mode;
+            document.getElementById('mode-modal').style.display = 'none';
+
+            if (mode === '2p') {
+                activePlayers = ['red', 'yellow'];
+                document.getElementById('mode-label').innerText = "MODE: 2 PLAYERS (LOCAL)";
+            } else if (mode === '4p') {
+                activePlayers = ['red', 'green', 'yellow', 'blue'];
+                document.getElementById('mode-label').innerText = "MODE: 4 PLAYERS (LOCAL)";
+            } else {
+                activePlayers = ['red', 'green', 'yellow', 'blue'];
+                document.getElementById('mode-label').innerText = "MODE: VS COMPUTER";
+            }
+
             currentTurnIdx = 0;
             canRoll = true;
             isMoving = false;
             tokens = { red: [-1,-1,-1,-1], green: [-1,-1,-1,-1], yellow: [-1,-1,-1,-1], blue: [-1,-1,-1,-1] };
             renderDicePips(1);
-            document.getElementById('turn-indicator').innerText = "RED'S TURN (YOU)";
-            document.getElementById('active-player-name').innerText = 'RED (YOU)';
-            document.getElementById('active-player-name').style.color = COLORS.red;
+            
+            const firstColor = activePlayers[0];
+            document.getElementById('turn-indicator').innerText = `${firstColor.toUpperCase()}'S TURN`;
+            document.getElementById('active-player-name').innerText = firstColor.toUpperCase();
+            document.getElementById('active-player-name').style.color = COLORS[firstColor];
             document.getElementById('dice-hint').innerText = "TAP TO ROLL";
+            
             drawBoard();
         }
 
         window.onload = () => {
-            drawBoard();
             renderDicePips(1);
+            openModeModal(); // গেম শুরুতে মোড সিলেক্ট করতে বলবে
         };
     </script>
 </body>
