@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Grandmaster Chess 3D</title>
+    <style>
+        :root {
+            --bg-felt: #0b2e1b;
+            --gold: #ffd700;
+            --gold-btn: linear-gradient(180deg, #ecd58a 0%, #a88434 100%);
+            --light-sq: #f0d9b5;
+            --dark-sq: #b58863;
+        }
+
+        * {
+            box-sizing: border-box; margin: 0; padding: 0;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            user-select: none; -webkit-tap-highlight-color: transparent;
+        }
+
+        html, body {
+            width: 100%; height: 100%; background: #05140d; overflow: hidden;
+        }
+
+        #game-screen {
+            width: 100vw; height: 100dvh; max-width: 480px; margin: 0 auto;
+            background: radial-gradient(circle at 50% 35%, #134629 0%, var(--bg-felt) 70%, #03150c 100%);
+            display: flex; flex-direction: column; justify-content: space-between;
+            align-items: center; position: relative; overflow: hidden;
+        }
+
+        /* Top Header */
+        .top-bar {
+            width: 100%; display: flex; justify-content: space-between; align-items: center;
+            padding: 8px 12px; background: rgba(0,0,0,0.55); z-index: 50;
+            border-bottom: 2px solid rgba(255, 215, 0, 0.4); flex-shrink: 0;
+        }
+        .circle-btn {
+            width: 36px; height: 36px; background: #bfa15f; border: 2px solid #ecd58a;
+            border-radius: 8px; display: flex; align-items: center; justify-content: center;
+            font-size: 16px; cursor: pointer; box-shadow: 0 2px 5px rgba(0,0,0,0.4);
+        }
+        .circle-btn:active { transform: scale(0.92); }
+
+        .player-status-pill {
+            background: rgba(10, 25, 18, 0.95); border: 2px solid var(--gold);
+            padding: 4px 14px; border-radius: 20px; color: #fff; font-size: 12px; font-weight: 900;
+            letter-spacing: 0.5px; box-shadow: 0 0 10px rgba(0,0,0,0.5);
+        }
+
+        #hud-status {
+            position: absolute; top: 9%; left: 50%; transform: translate(-50%, -50%);
+            background: rgba(4, 25, 15, 0.96); border: 2px solid var(--gold);
+            padding: 5px 16px; border-radius: 20px; color: #fff; font-size: 11px;
+            font-weight: 900; text-transform: uppercase; letter-spacing: 1px;
+            box-shadow: 0 0 16px rgba(255, 215, 0, 0.5); z-index: 100; pointer-events: none;
+            transition: all 0.25s ease-out; opacity: 0; text-align: center;
+        }
+        #hud-status.show { opacity: 1; }
+
+        /* Board Area */
+        #board-wrapper-area {
+            flex: 1; width: 100%; display: flex; align-items: center; justify-content: center;
+            padding: 6px; overflow: hidden;
+        }
+
+        #board-container {
+            width: min(94vw, calc(100dvh - 150px));
+            height: min(94vw, calc(100dvh - 150px));
+            max-width: 430px; max-height: 430px;
+            border: 8px solid #2d1808; border-radius: 10px;
+            box-shadow: 0 12px 35px rgba(0,0,0,0.9), 0 0 20px rgba(255,215,0,0.3);
+            background: #fff; position: relative;
+        }
+
+        canvas {
+            width: 100%; height: 100%; display: block; border-radius: 4px;
+        }
+
+        /* Bottom Info Panel */
+        #control-panel {
+            width: 100%;
+            padding: 8px 16px max(12px, env(safe-area-inset-bottom, 12px)) 16px;
+            display: flex; justify-content: space-between; align-items: center;
+            background: rgba(0,0,0,0.85); border-top: 2px solid rgba(255,215,0,0.4);
+            z-index: 50; flex-shrink: 0;
+        }
+
+        .generic-modal {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            width: 90%; max-width: 320px; background: #18222d; border: 2px solid #bfa15f;
+            border-radius: 14px; padding: 18px; color: #fff; z-index: 200;
+            display: none; flex-direction: column; align-items: center; box-shadow: 0 15px 50px rgba(0,0,0,0.9);
+        }
+        .modal-btn {
+            background: var(--gold-btn); border: 2px solid #fff; color: #3b2803;
+            font-size: 14px; font-weight: bold; height: 40px; border-radius: 8px; cursor: pointer;
+            width: 100%; margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="game-screen">
+        <div class="top-bar">
+            <div class="circle-btn" onclick="window.location.href='index.html'" title="Main Menu">🏠</div>
+            <div class="player-status-pill" id="turn-indicator">WHITE'S TURN</div>
+            <div class="circle-btn" onclick="openModeModal()" title="Game Mode">⚙️</div>
+        </div>
+
+        <div id="hud-status">Make Your Move</div>
+
+        <div id="board-wrapper-area">
+            <div id="board-container">
+                <canvas id="chessCanvas" width="600" height="600"></canvas>
+            </div>
+        </div>
+
+        <div id="control-panel">
+            <div>
+                <div style="font-size: 10px; color: #aaa; font-weight: bold;" id="mode-label">MODE: VS PRO AI</div>
+                <div style="font-size: 14px; font-weight: 900; color: var(--gold);" id="game-state-text">WHITE TO MOVE</div>
+            </div>
+            <button class="modal-btn" style="width: auto; padding: 0 16px; margin: 0; height: 36px;" onclick="resetGame()">RESTART</button>
+        </div>
+
+        <!-- Mode Select Modal -->
+        <div id="mode-modal" class="generic-modal">
+            <div style="font-size: 18px; font-weight: 900; color: var(--gold); margin-bottom: 6px;">CHESS BATTLE MODE</div>
+            <div style="font-size: 11px; color: #ccc; margin-bottom: 12px; text-align: center;">খেলার ধরন নির্বাচন করুন</div>
+            <button class="modal-btn" onclick="setMode('ai')">🤖 VS PRO AI (Grandmaster)</button>
+            <button class="modal-btn" style="background:#2ecc71; color:#000;" onclick="setMode('2p')">👥 2 PLAYERS (Pass & Play)</button>
+        </div>
+
+        <!-- Result Modal -->
+        <div id="win-modal" class="generic-modal">
+            <div style="font-size: 36px; margin-bottom: 6px;">👑</div>
+            <div style="font-size: 18px; font-weight: 900; color: var(--gold);" id="win-title">CHECKMATE!</div>
+            <div style="font-size: 12px; color: #ccc; margin-top: 4px;" id="win-desc">Winner details</div>
+            <button class="modal-btn" onclick="openModeModal()">PLAY AGAIN</button>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('chessCanvas');
+        const ctx = canvas.getContext('2d');
+        const C_SIZE = 600;
+        const CELL = C_SIZE / 8; // 75px
+
+        let gameMode = 'ai'; // 'ai' or '2p'
+        let turn = 'w'; // 'w' = White, 'b' = Black
+        let selectedSquare = null;
+        let validMoves = [];
+        let isThinking = false;
+
+        // ৮x৮ বোর্ড ম্যাট্রিক্স: ছোট হাতের অক্ষর = কালো, বড় হাতের অক্ষর = সাদা
+        let board = [
+            ['r','n','b','q','k','b','n','r'],
+            ['p','p','p','p','p','p','p','p'],
+            ['.','.','.','.','.','.','.','.'],
+            ['.','.','.','.','.','.','.','.'],
+            ['.','.','.','.','.','.','.','.'],
+            ['.','.','.','.','.','.','.','.'],
+            ['P','P','P','P','P','P','P','P'],
+            ['R','N','B','Q','K','B','N','R']
+        ];
+
+        // Piece-Square Values (প্রো এআই পজিশনাল টেবিল)
+        const PIECE_VALS = { p: 100, n: 320, b: 330, r: 500, q: 900, k: 20000 };
+        const PAWN_TABLE = [
+            [0,  0,  0,  0,  0,  0,  0,  0],
+            [50, 50, 50, 50, 50, 50, 50, 50],
+            [10, 10, 20, 30, 30, 20, 10, 10],
+            [5,  5, 10, 25, 25, 10,  5,  5],
+            [0,  0,  0, 20, 20,  0,  0,  0],
+            [5, -5,-10,  0,  0,-10, -5,  5],
+            [5, 10, 10,-20,-20, 10, 10,  5],
+            [0,  0,  0,  0,  0,  0,  0,  0]
+        ];
+        const KNIGHT_TABLE = [
+            [-50,-40,-30,-30,-30,-30,-40,-50],
+            [-40,-20,  0,  0,  0,  0,-20,-40],
+            [-30,  0, 10, 15, 15, 10,  0,-30],
+            [-30,  5, 15, 20, 20, 15,  5,-30],
+            [-30,  0, 15, 20, 20, 15,  0,-30],
+            [-30,  5, 10, 15, 15, 10,  5,-30],
+            [-40,-20,  0,  5,  5,  0,-20,-40],
+            [-50,-40,-30,-30,-30,-30,-40,-50]
+        ];
+
+        /* ------------------ সাউন্ড ইঞ্জিন ------------------ */
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        function playTone(freq, type, dur, gainVal = 0.1) {
+            try {
+                if (audioCtx.state === 'suspended') audioCtx.resume();
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = type; osc.frequency.value = freq;
+                gain.gain.setValueAtTime(gainVal, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + dur);
+                osc.connect(gain); gain.connect(audioCtx.destination);
+                osc.start(); osc.stop(audioCtx.currentTime + dur);
+            } catch(e){}
+        }
+
+        function setHUD(text) {
+            const el = document.getElementById('hud-status');
+            el.innerText = text; el.classList.add('show');
+            setTimeout(() => el.classList.remove('show'), 1600);
+        }
+
+        /* ------------------ বোর্ড ও ৩ডি গুটি রেন্ডারিং ------------------ */
+        function drawBoard() {
+            ctx.clearRect(0, 0, C_SIZE, C_SIZE);
+
+            // ১. চকচকে উডেন গ্রিড স্কোয়ার
+            for (let r = 0; r < 8; r++) {
+                for (let c = 0; c < 8; c++) {
+                    const isLight = (r + c) % 2 === 0;
+                    ctx.fillStyle = isLight ? '#f0d9b5' : '#b58863';
+                    ctx.fillRect(c * CELL, r * CELL, CELL, CELL);
+
+                    // সিলেক্টেড স্কোয়ার হাইলাইট
+                    if (selectedSquare && selectedSquare.r === r && selectedSquare.c === c) {
+                        ctx.fillStyle = 'rgba(255, 215, 0, 0.55)';
+                        ctx.fillRect(c * CELL, r * CELL, CELL, CELL);
+                    }
+                }
+            }
+
+            // ২. লিগ্যাল মুভ ডট হাইলাইট
+            validMoves.forEach(m => {
+                ctx.beginPath();
+                ctx.arc(m.toC * CELL + CELL / 2, m.toR * CELL + CELL / 2, 10, 0, Math.PI * 2);
+                ctx.fillStyle = (board[m.toR][m.toC] !== '.') ? 'rgba(231, 76, 60, 0.75)' : 'rgba(46, 204, 113, 0.7)';
+                ctx.fill();
+            });
+
+            // ৩. ৩ডি মেটালিক গুটি আঁকা
+            for (let r = 0; r < 8; r++) {
+                for (let c = 0; c < 8; c++) {
+                    const p = board[r][c];
+                    if (p !== '.') draw3DPiece(p, c * CELL + CELL / 2, r * CELL + CELL / 2);
+                }
+            }
+        }
+
+        function draw3DPiece(p, cx, cy) {
+            const isWhite = (p === p.toUpperCase());
+            const type = p.toLowerCase();
+            const glyphs = { k: '♚', q: '♛', r: '♜', b: '♝', n: '♞', p: '♟' };
+
+            ctx.save();
+            // গুটির সফট ৩ডি শ্যাডো
+            ctx.font = '54px "Segoe UI Symbol", sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.35)';
+            ctx.fillText(glyphs[type], cx + 2, cy + 5);
+
+            // মূল গুটি (হোয়াইট মেটালিক গোল্ড / ব্ল্যাক রয়্যাল অবসিডিয়ান)
+            ctx.fillStyle = isWhite ? '#ffffff' : '#1e272e';
+            ctx.strokeStyle = isWhite ? '#b8860b' : '#000000';
+            ctx.lineWidth = 1.8;
+            ctx.strokeText(glyphs[type], cx, cy);
+            ctx.fillText(glyphs[type], cx, cy);
+
+            ctx.restore();
+        }
+
+        /* ------------------ লিগ্যাল মুভস ক্যালকুলেশন ------------------ */
+        function getMovesForPiece(b, r, c) {
+            const p = b[r][c];
+            if (p === '.') return [];
+            const isW = (p === p.toUpperCase());
+            let moves = [];
+
+            const addMove = (tr, tc) => {
+                if (tr < 0 || tr > 7 || tc < 0 || tc > 7) return false;
+                const dest = b[tr][tc];
+                if (dest === '.') {
+                    moves.push({ fromR: r, fromC: c, toR: tr, toC: tc });
+                    return true;
+                }
+                const destIsW = (dest === dest.toUpperCase());
+                if (isW !== destIsW) {
+                    moves.push({ fromR: r, fromC: c, toR: tr, toC: tc });
+                }
+                return false;
+            };
+
+            const t = p.toLowerCase();
+            if (t === 'p') {
+                const dir = isW ? -1 : 1;
+                const startRow = isW ? 6 : 1;
+                if (r + dir >= 0 && r + dir <= 7 && b[r + dir][c] === '.') {
+                    moves.push({ fromR: r, fromC: c, toR: r + dir, toC: c });
+                    if (r === startRow && b[r + 2 * dir][c] === '.') {
+                        moves.push({ fromR: r, fromC: c, toR: r + 2 * dir, toC: c });
+                    }
+                }
+                // ক্যাপচার ডায়াগনাল
+                [-1, 1].forEach(dc => {
+                    const tr = r + dir, tc = c + dc;
+                    if (tr >= 0 && tr <= 7 && tc >= 0 && tc <= 7) {
+                        const dest = b[tr][tc];
+                        if (dest !== '.' && (dest === dest.toUpperCase()) !== isW) {
+                            moves.push({ fromR: r, fromC: c, toR: tr, toC: tc });
+                        }
+                    }
+                });
+            } else if (t === 'n') {
+                [[-2,-1],[-2,1],[-1,-2],[-1,2],[1,-2],[1,2],[2,-1],[2,1]].forEach(([dr, dc]) => addMove(r + dr, c + dc));
+            } else if (t === 'b') {
+                [[-1,-1],[-1,1],[1,-1],[1,1]].forEach(([dr, dc]) => {
+                    let step = 1; while (addMove(r + dr * step, c + dc * step)) step++;
+                });
+            } else if (t === 'r') {
+                [[-1,0],[1,0],[0,-1],[0,1]].forEach(([dr, dc]) => {
+                    let step = 1; while (addMove(r + dr * step, c + dc * step)) step++;
+                });
+            } else if (t === 'q') {
+                [[-1,-1],[-1,1],[1,-1],[1,1],[-1,0],[1,0],[0,-1],[0,1]].forEach(([dr, dc]) => {
+                    let step = 1; while (addMove(r + dr * step, c + dc * step)) step++;
+                });
+            } else if (t === 'k') {
+                [[-1,-1],[-1,1],[1,-1],[1,1],[-1,0],[1,0],[0,-1],[0,1]].forEach(([dr, dc]) => addMove(r + dr, c + dc));
+            }
+
+            return moves;
+        }
+
+        function getAllLegalMoves(b, color) {
+            let moves = [];
+            for (let r = 0; r < 8; r++) {
+                for (let c = 0; c < 8; c++) {
+                    const p = b[r][c];
+                    if (p !== '.' && ((color === 'w' && p === p.toUpperCase()) || (color === 'b' && p === p.toLowerCase()))) {
+                        moves.push(...getMovesForPiece(b, r, c));
+                    }
+                }
+            }
+            return moves;
+        }
+
+        function makeMove(b, m) {
+            const newB = b.map(row => [...row]);
+            let piece = newB[m.fromR][m.fromC];
+            // পন প্রমোশন অটো কুইন
+            if (piece === 'P' && m.toR === 0) piece = 'Q';
+            if (piece === 'p' && m.toR === 7) piece = 'q';
+            newB[m.toR][m.toC] = piece;
+            newB[m.fromR][m.fromC] = '.';
+            return newB;
+        }
+
+        /* ------------------ প্রো এআই মিনিম্যাক্স ইঞ্জিন ------------------ */
+        function evaluateBoard(b) {
+            let total = 0;
+            for (let r = 0; r < 8; r++) {
+                for (let c = 0; c < 8; c++) {
+                    const p = b[r][c];
+                    if (p === '.') continue;
+                    const isW = (p === p.toUpperCase());
+                    const t = p.toLowerCase();
+                    let val = PIECE_VALS[t] || 0;
+
+                    // পজিশনাল স্কোর
+                    if (t === 'p') val += isW ? PAWN_TABLE[r][c] : PAWN_TABLE[7 - r][c];
+                    if (t === 'n') val += KNIGHT_TABLE[r][c];
+
+                    total += isW ? val : -val;
+                }
+            }
+            return total;
+        }
+
+        function minimax(b, depth, alpha, beta, isMaximizing) {
+            if (depth === 0) return evaluateBoard(b);
+
+            const moves = getAllLegalMoves(b, isMaximizing ? 'w' : 'b');
+            if (moves.length === 0) return isMaximizing ? -99999 : 99999;
+
+            if (isMaximizing) {
+                let maxEval = -Infinity;
+                for (let m of moves) {
+                    const nb = makeMove(b, m);
+                    const eval = minimax(nb, depth - 1, alpha, beta, false);
+                    maxEval = Math.max(maxEval, eval);
+                    alpha = Math.max(alpha, eval);
+                    if (beta <= alpha) break;
+                }
+                return maxEval;
+            } else {
+                let minEval = Infinity;
+                for (let m of moves) {
+                    const nb = makeMove(b, m);
+                    const eval = minimax(nb, depth - 1, alpha, beta, true);
+                    minEval = Math.min(minEval, eval);
+                    beta = Math.min(beta, eval);
+                    if (beta <= alpha) break;
+                }
+                return minEval;
+            }
+        }
+
+        function getBestMoveAI() {
+            const moves = getAllLegalMoves(board, 'b');
+            if (moves.length === 0) return null;
+
+            let bestMove = null;
+            let minEval = Infinity;
+
+            for (let m of moves) {
+                const nb = makeMove(board, m);
+                const eval = minimax(nb, 2, -Infinity, Infinity, true); // Depth 2-3 প্রো ট্যাকটিক্যাল সার্চ
+                if (eval < minEval) {
+                    minEval = eval;
+                    bestMove = m;
+                }
+            }
+            return bestMove;
+        }
+
+        /* ------------------ প্লেয়ার ইন্টারঅ্যাকশন ------------------ */
+        canvas.addEventListener('click', (e) => {
+            if (isThinking) return;
+            if (gameMode === 'ai' && turn !== 'w') return;
+
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            const c = Math.floor(((e.clientX - rect.left) * scaleX) / CELL);
+            const r = Math.floor(((e.clientY - rect.top) * scaleY) / CELL);
+
+            if (r < 0 || r > 7 || c < 0 || c > 7) return;
+
+            const clickedPiece = board[r][c];
+            const isMyPiece = (clickedPiece !== '.') && ((turn === 'w' && clickedPiece === clickedPiece.toUpperCase()) || (turn === 'b' && clickedPiece === clickedPiece.toLowerCase()));
+
+            if (isMyPiece) {
+                selectedSquare = { r, c };
+                validMoves = getMovesForPiece(board, r, c);
+                playTone(450, 'sine', 0.05, 0.05);
+                drawBoard();
+                return;
+            }
+
+            if (selectedSquare) {
+                const chosenMove = validMoves.find(m => m.toR === r && m.toC === c);
+                if (chosenMove) {
+                    executeMove(chosenMove);
+                } else {
+                    selectedSquare = null;
+                    validMoves = [];
+                    drawBoard();
+                }
+            }
+        });
+
+        function executeMove(m) {
+            const isCapture = (board[m.toR][m.toC] !== '.');
+            board = makeMove(board, m);
+            selectedSquare = null;
+            validMoves = [];
+
+            if (isCapture) playTone(280, 'triangle', 0.12, 0.15);
+            else playTone(540, 'sine', 0.08, 0.08);
+
+            turn = (turn === 'w') ? 'b' : 'w';
+            updateUI();
+            drawBoard();
+
+            // চেকমেট টেস্ট
+       
