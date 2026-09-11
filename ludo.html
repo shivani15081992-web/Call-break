@@ -9,6 +9,10 @@
             --bg-felt: #0d5f38;
             --gold: #ffd700;
             --gold-btn: linear-gradient(180deg, #ecd58a 0%, #a88434 100%);
+            --c-red: #e71d36;
+            --c-green: #009b48;
+            --c-yellow: #cfa200;
+            --c-blue: #1e88e5;
         }
 
         * {
@@ -27,47 +31,114 @@
             background: radial-gradient(circle at 50% 35%, #188651 0%, var(--bg-felt) 70%, #03150c 100%);
             display: flex; flex-direction: column; justify-content: space-between;
             align-items: center; position: relative; overflow: hidden;
+            padding: 4px 6px max(8px, env(safe-area-inset-bottom, 8px)) 6px;
         }
 
         /* Top Header */
         .top-bar {
             width: 100%; display: flex; justify-content: space-between; align-items: center;
-            padding: 6px 12px; background: rgba(0,0,0,0.55); z-index: 50;
-            border-bottom: 2px solid rgba(255, 215, 0, 0.4); flex-shrink: 0;
+            padding: 4px 8px; background: rgba(0,0,0,0.55); z-index: 50;
+            border-bottom: 2px solid rgba(255, 215, 0, 0.4); border-radius: 8px; flex-shrink: 0;
         }
         .circle-btn {
-            width: 36px; height: 36px; background: #bfa15f; border: 2px solid #ecd58a;
+            width: 34px; height: 34px; background: #bfa15f; border: 2px solid #ecd58a;
             border-radius: 8px; display: flex; align-items: center; justify-content: center;
-            font-size: 16px; cursor: pointer; box-shadow: 0 2px 5px rgba(0,0,0,0.4);
+            font-size: 15px; cursor: pointer; box-shadow: 0 2px 5px rgba(0,0,0,0.4);
         }
         .circle-btn:active { transform: scale(0.92); }
 
         .player-status-pill {
             background: rgba(10, 25, 18, 0.95); border: 2px solid var(--gold);
-            padding: 4px 14px; border-radius: 20px; color: #fff; font-size: 12px; font-weight: 900;
+            padding: 3px 12px; border-radius: 18px; color: #fff; font-size: 11px; font-weight: 900;
             letter-spacing: 0.5px; box-shadow: 0 0 10px rgba(0,0,0,0.5);
         }
 
+        /* HUD Alert */
         #hud-status {
-            position: absolute; top: 9%; left: 50%; transform: translate(-50%, -50%);
+            position: absolute; top: 10%; left: 50%; transform: translate(-50%, -50%);
             background: rgba(4, 25, 15, 0.96); border: 2px solid var(--gold);
-            padding: 5px 16px; border-radius: 20px; color: #fff; font-size: 11px;
+            padding: 4px 14px; border-radius: 20px; color: #fff; font-size: 11px;
             font-weight: 900; text-transform: uppercase; letter-spacing: 1px;
             box-shadow: 0 0 16px rgba(255, 215, 0, 0.5); z-index: 100; pointer-events: none;
             transition: all 0.25s ease-out; opacity: 0; text-align: center;
         }
         #hud-status.show { opacity: 1; }
 
-        /* Board Container: সম্পূর্ণ দৃশ্যমান ও বড় সাইজ */
+        /* ৪টি কোণার প্লেয়ার পড রো */
+        .player-pods-row {
+            width: 100%; display: flex; justify-content: space-between; align-items: center;
+            padding: 2px 4px; z-index: 30; flex-shrink: 0;
+        }
+
+        .player-pod {
+            display: flex; align-items: center; gap: 8px;
+            background: rgba(0,0,0,0.65); border: 2px solid rgba(255,255,255,0.25);
+            padding: 4px 8px; border-radius: 12px; transition: all 0.25s ease;
+            position: relative; opacity: 0.55;
+        }
+        .player-pod.active-turn {
+            opacity: 1; border-color: var(--gold);
+            box-shadow: 0 0 14px rgba(255,215,0,0.7); transform: scale(1.05);
+        }
+
+        .pod-avatar {
+            width: 32px; height: 32px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 16px; border: 2px solid #fff; box-shadow: 0 2px 5px rgba(0,0,0,0.5);
+        }
+        .pod-info { display: flex; flex-direction: column; line-height: 1.1; }
+        .pod-name { font-size: 11px; font-weight: 900; color: #fff; text-transform: uppercase; }
+        .pod-hint { font-size: 8px; font-weight: bold; color: var(--gold); }
+
+        /* প্রতিটি পডের ৩ডি ডাইস */
+        .pod-dice {
+            width: 38px; height: 38px;
+            background: radial-gradient(circle at 35% 35%, #ffffff 0%, #f1f2f6 60%, #dfe4ea 100%);
+            border-radius: 8px;
+            box-shadow: 0 3px 0 #8395a7, 0 5px 10px rgba(0,0,0,0.7), inset 0 2px 3px rgba(255,255,255,0.9);
+            border: 1.5px solid #ced6e0;
+            display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(3, 1fr);
+            padding: 4px; cursor: pointer; transition: transform 0.15s;
+        }
+        .player-pod.active-turn .pod-dice {
+            animation: dicePulse 1s infinite alternate;
+            border-color: #fff;
+        }
+        @keyframes dicePulse {
+            from { box-shadow: 0 0 6px rgba(255,215,0,0.6); }
+            to { box-shadow: 0 0 14px rgba(255,215,0,1); transform: scale(1.08); }
+        }
+
+        .pod-dice.rolling {
+            animation: proDiceRoll 0.45s ease-in-out !important;
+        }
+        @keyframes proDiceRoll {
+            0% { transform: rotate(0deg) scale(0.9); }
+            40% { transform: rotate(180deg) scale(1.2); }
+            80% { transform: rotate(320deg) scale(1.05); }
+            100% { transform: rotate(360deg) scale(1); }
+        }
+
+        .pip {
+            width: 6.5px; height: 6.5px; background: radial-gradient(circle at 40% 40%, #2f3542, #000);
+            border-radius: 50%; align-self: center; justify-self: center;
+            box-shadow: inset 0 1px 1px rgba(0,0,0,0.8);
+        }
+        .pip.red-pip {
+            background: radial-gradient(circle at 35% 35%, #ff4757, #b33939) !important;
+            width: 8.5px; height: 8.5px;
+        }
+
+        /* বোর্ড কন্টেইনার */
         #board-wrapper-area {
             flex: 1; width: 100%; min-height: 0; display: flex;
             align-items: center; justify-content: center;
-            padding: 2px 8px; overflow: hidden;
+            padding: 2px; overflow: hidden;
         }
 
         #board-container {
-            width: min(96vw, calc(100dvh - 145px));
-            height: min(96vw, calc(100dvh - 145px));
+            width: min(96vw, calc(100dvh - 160px));
+            height: min(96vw, calc(100dvh - 160px));
             max-width: 440px; max-height: 440px;
             border: 6px solid #2d1808; border-radius: 12px;
             box-shadow: 0 8px 25px rgba(0,0,0,0.85), 0 0 15px rgba(255,215,0,0.3);
@@ -76,56 +147,6 @@
 
         canvas {
             width: 100%; height: 100%; display: block; border-radius: 6px;
-        }
-
-        /* 3D Dice Control Panel: অ্যাপ্লিকেশনে কোনোভাবেই কাটবে না */
-        #control-panel {
-            width: 100%;
-            padding: 6px 16px max(10px, env(safe-area-inset-bottom, 10px)) 16px;
-            display: flex; justify-content: space-between; align-items: center;
-            background: rgba(0,0,0,0.85); border-top: 2px solid rgba(255,215,0,0.4);
-            z-index: 50; flex-shrink: 0;
-        }
-
-        .dice-area {
-            display: flex; align-items: center; gap: 12px;
-        }
-
-        .real-dice {
-            width: 58px; height: 58px;
-            background: radial-gradient(circle at 35% 35%, #ffffff 0%, #f1f2f6 60%, #dfe4ea 100%);
-            border-radius: 14px;
-            box-shadow: 0 5px 0 #8395a7, 0 8px 16px rgba(0,0,0,0.8), inset 0 2px 3px rgba(255,255,255,0.9);
-            border: 2px solid #ced6e0;
-            display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(3, 1fr);
-            padding: 6px; cursor: pointer; position: relative;
-            transition: transform 0.15s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-        }
-        .real-dice:active {
-            transform: translateY(3px);
-            box-shadow: 0 2px 0 #8395a7, 0 4px 8px rgba(0,0,0,0.6);
-        }
-
-        .real-dice.rolling {
-            animation: proDiceRoll 0.45s ease-in-out;
-        }
-
-        @keyframes proDiceRoll {
-            0% { transform: rotate(0deg) scale(0.9); }
-            40% { transform: rotate(180deg) scale(1.15); box-shadow: 0 14px 22px rgba(255,215,0,0.5); }
-            80% { transform: rotate(320deg) scale(1.05); }
-            100% { transform: rotate(360deg) scale(1); }
-        }
-
-        .pip {
-            width: 10px; height: 10px; background: radial-gradient(circle at 40% 40%, #2f3542, #000);
-            border-radius: 50%; align-self: center; justify-self: center;
-            box-shadow: inset 0 1px 2px rgba(0,0,0,0.8), 0 1px 1px rgba(255,255,255,0.8);
-        }
-        .pip.red-pip {
-            background: radial-gradient(circle at 35% 35%, #ff4757, #b33939) !important;
-            width: 14px; height: 14px;
-            box-shadow: inset 0 2px 4px rgba(0,0,0,0.7), 0 0 6px rgba(255,71,87,0.6);
         }
 
         /* Generic Modal */
@@ -145,6 +166,7 @@
 <body>
 
     <div id="game-screen">
+        <!-- Top Bar -->
         <div class="top-bar">
             <div class="circle-btn" onclick="window.location.href='index.html'" title="Main Menu">🏠</div>
             <div class="player-status-pill" id="turn-indicator">RED'S TURN</div>
@@ -153,36 +175,63 @@
 
         <div id="hud-status">Roll Dice!</div>
 
-        <!-- ক্যানভাস এলাকা -->
+        <!-- ওপরের দুটি প্লেয়ার পড (রেড ও গ্রিন) -->
+        <div class="player-pods-row">
+            <!-- Red Pod (Top Left) -->
+            <div class="player-pod active-turn" id="pod-red" onclick="handlePodDiceClick('red')">
+                <div class="pod-avatar" style="background: var(--c-red);">🧔</div>
+                <div class="pod-info">
+                    <span class="pod-name" style="color: #ff7675;">RED (YOU)</span>
+                    <span class="pod-hint" id="hint-red">TAP DICE</span>
+                </div>
+                <div class="pod-dice" id="dice-red"></div>
+            </div>
+
+            <!-- Green Pod (Top Right) -->
+            <div class="player-pod" id="pod-green" onclick="handlePodDiceClick('green')">
+                <div class="pod-dice" id="dice-green"></div>
+                <div class="pod-info" style="text-align: right;">
+                    <span class="pod-name" style="color: #55efc4;">GREEN</span>
+                    <span class="pod-hint" id="hint-green">WAIT</span>
+                </div>
+                <div class="pod-avatar" style="background: var(--c-green);">👦</div>
+            </div>
+        </div>
+
+        <!-- সেন্ট্রাল লুডু বোর্ড ক্যানভাস -->
         <div id="board-wrapper-area">
             <div id="board-container">
                 <canvas id="ludoCanvas" width="600" height="600"></canvas>
             </div>
         </div>
 
-        <!-- কন্ট্রোল প্যানেল -->
-        <div id="control-panel">
-            <div>
-                <div style="font-size: 10px; color: #aaa; font-weight: bold;" id="mode-label">MODE: VS BOT</div>
-                <div style="font-size: 15px; font-weight: 900; color: #e71d36;" id="active-player-name">RED</div>
+        <!-- নিচের দুটি প্লেয়ার পড (ব্লু ও ইয়েলো) -->
+        <div class="player-pods-row">
+            <!-- Blue Pod (Bottom Left) -->
+            <div class="player-pod" id="pod-blue" onclick="handlePodDiceClick('blue')">
+                <div class="pod-avatar" style="background: var(--c-blue);">👩</div>
+                <div class="pod-info">
+                    <span class="pod-name" style="color: #74b9ff;">BLUE</span>
+                    <span class="pod-hint" id="hint-blue">WAIT</span>
+                </div>
+                <div class="pod-dice" id="dice-blue"></div>
             </div>
 
-            <div class="dice-area">
-                <div style="font-size: 11px; color: var(--gold); font-weight: bold; text-align: right;" id="dice-hint">
-                    TAP TO ROLL
+            <!-- Yellow Pod (Bottom Right) -->
+            <div class="player-pod" id="pod-yellow" onclick="handlePodDiceClick('yellow')">
+                <div class="pod-dice" id="dice-yellow"></div>
+                <div class="pod-info" style="text-align: right;">
+                    <span class="pod-name" style="color: #ffeaa7;">YELLOW</span>
+                    <span class="pod-hint" id="hint-yellow">WAIT</span>
                 </div>
-                <div class="real-dice" id="dice" onclick="handleDiceClick()">
-                    <div></div><div></div><div></div>
-                    <div></div><div class="pip red-pip"></div><div></div>
-                    <div></div><div></div><div></div>
-                </div>
+                <div class="pod-avatar" style="background: var(--c-yellow); color:#000;">🤠</div>
             </div>
         </div>
 
-        <!-- গেম মোড সিলেকশন মোডাল (২ জন / ৪ জন / বট) -->
+        <!-- Mode Modal -->
         <div id="mode-modal" class="generic-modal">
             <div style="font-size: 18px; font-weight: 900; color: var(--gold); margin-bottom: 6px;">SELECT GAME MODE</div>
-            <div style="font-size: 11px; color: #ccc; margin-bottom: 12px; text-align: center;">একই ফোন থেকে অফলাইনে খেলুন</div>
+            <div style="font-size: 11px; color: #ccc; margin-bottom: 12px; text-align: center;">একই ফোনে সম্পূর্ণ অফলাইনে খেলুন</div>
             <button class="modal-btn" onclick="setGameMode('bot')">🤖 VS COMPUTER (1 Player)</button>
             <button class="modal-btn" style="background:#2ecc71; color:#000;" onclick="setGameMode('2p')">👥 2 PLAYERS (Red vs Yellow)</button>
             <button class="modal-btn" style="background:#3498db; color:#fff;" onclick="setGameMode('4p')">👨‍👩‍👧‍👦 4 PLAYERS (Pass & Play)</button>
@@ -211,9 +260,8 @@
         };
 
         let activePlayers = ['red', 'green', 'yellow', 'blue'];
-        let gameMode = 'bot'; // 'bot', '2p', '4p'
+        let gameMode = 'bot';
 
-        // ৫২টি ঘরের ঘড়ির কাঁটার দিকের ট্র্যাক
         const TRACK = [
             [6,1],[6,2],[6,3],[6,4],[6,5],
             [5,6],[4,6],[3,6],[2,6],[1,6],[0,6],
@@ -481,18 +529,15 @@
             return { x: 7.5 * CELL, y: 7.5 * CELL };
         }
 
-        /* ------------------ বড় সাইজের পিন-হেড ঘুঁটি ------------------ */
         function drawPinToken(x, y, color, isCurrentPlayer) {
             ctx.save();
             y = y - 6;
 
-            // ১. বড় শ্যাডো
             ctx.beginPath();
             ctx.ellipse(x + 3, y + 20, 11, 5.5, 0, 0, Math.PI * 2);
             ctx.fillStyle = 'rgba(0,0,0,0.38)';
             ctx.fill();
 
-            // ২. পিন হেড
             ctx.beginPath();
             ctx.arc(x, y, 14.5, Math.PI * 0.8, Math.PI * 0.2, false);
             ctx.lineTo(x, y + 20);
@@ -504,7 +549,6 @@
             ctx.strokeStyle = '#222222';
             ctx.stroke();
 
-            // ৩. সেন্ট্রাল ক্রিস্টাল
             ctx.beginPath();
             ctx.arc(x, y, 9.5, 0, Math.PI * 2);
             ctx.fillStyle = color;
@@ -518,7 +562,6 @@
             ctx.fillStyle = 'rgba(255,255,255,0.85)';
             ctx.fill();
 
-            // হাইলাইট রিং
             if (isCurrentPlayer && !canRoll && !isMoving && isHumanTurn()) {
                 ctx.beginPath();
                 ctx.arc(x, y + 5, 22, 0, Math.PI * 2);
@@ -529,8 +572,10 @@
             ctx.restore();
         }
 
-        function renderDicePips(val) {
-            const d = document.getElementById('dice');
+        /* ------------------ প্লেয়ার পড ডাইস গ্রাফিক্স ------------------ */
+        function renderDiceOnPod(color, val) {
+            const d = document.getElementById(`dice-${color}`);
+            if (!d) return;
             d.innerHTML = '';
             let pips = [];
             if (val === 1) pips = [4];
@@ -552,28 +597,46 @@
             }
         }
 
-        function isHumanTurn() {
-            if (gameMode === '2p' || gameMode === '4p') return true;
-            return currentTurnIdx === 0; // 'bot' মোডে শুধু Red হিউম্যান
+        function updatePodUI() {
+            ['red', 'green', 'yellow', 'blue'].forEach(col => {
+                const pod = document.getElementById(`pod-${col}`);
+                const hint = document.getElementById(`hint-${col}`);
+                const isCurrent = (col === activePlayers[currentTurnIdx]);
+
+                if (isCurrent) {
+                    pod.classList.add('active-turn');
+                    hint.innerText = isHumanTurn() ? "TAP DICE" : "THINKING...";
+                } else {
+                    pod.classList.remove('active-turn');
+                    hint.innerText = "WAIT";
+                }
+            });
         }
 
-        function handleDiceClick() {
-            if (!canRoll || isMoving || !isHumanTurn()) return;
+        function isHumanTurn() {
+            if (gameMode === '2p' || gameMode === '4p') return true;
+            return currentTurnIdx === 0;
+        }
+
+        function handlePodDiceClick(color) {
+            if (!canRoll || isMoving) return;
+            if (color !== activePlayers[currentTurnIdx]) return;
+            if (!isHumanTurn()) return;
             rollDice();
         }
 
         function rollDice() {
             canRoll = false;
-            const diceEl = document.getElementById('dice');
-            diceEl.classList.add('rolling');
+            const color = activePlayers[currentTurnIdx];
+            const diceEl = document.getElementById(`dice-${color}`);
+            if (diceEl) diceEl.classList.add('rolling');
             playDiceRollSound();
 
             setTimeout(() => {
-                diceEl.classList.remove('rolling');
+                if (diceEl) diceEl.classList.remove('rolling');
                 diceVal = Math.floor(Math.random() * 6) + 1;
-                renderDicePips(diceVal);
+                renderDiceOnPod(color, diceVal);
 
-                const color = activePlayers[currentTurnIdx];
                 const validMoves = getMovableTokens(color, diceVal);
 
                 if (validMoves.length === 0) {
@@ -701,17 +764,13 @@
             currentTurnIdx = (currentTurnIdx + 1) % activePlayers.length;
             const color = activePlayers[currentTurnIdx];
             document.getElementById('turn-indicator').innerText = `${color.toUpperCase()}'S TURN`;
-            document.getElementById('active-player-name').innerText = color.toUpperCase();
-            document.getElementById('active-player-name').style.color = COLORS[color];
             canRoll = true;
 
+            updatePodUI();
             drawBoard();
 
             if (!isHumanTurn()) {
-                document.getElementById('dice-hint').innerText = "AI THINKING...";
                 setTimeout(rollDice, 750);
-            } else {
-                document.getElementById('dice-hint').innerText = "TAP TO ROLL";
             }
         }
 
@@ -732,33 +791,29 @@
 
             if (mode === '2p') {
                 activePlayers = ['red', 'yellow'];
-                document.getElementById('mode-label').innerText = "MODE: 2 PLAYERS (LOCAL)";
-            } else if (mode === '4p') {
-                activePlayers = ['red', 'green', 'yellow', 'blue'];
-                document.getElementById('mode-label').innerText = "MODE: 4 PLAYERS (LOCAL)";
+                document.getElementById('pod-green').style.display = 'none';
+                document.getElementById('pod-blue').style.display = 'none';
             } else {
                 activePlayers = ['red', 'green', 'yellow', 'blue'];
-                document.getElementById('mode-label').innerText = "MODE: VS COMPUTER";
+                document.getElementById('pod-green').style.display = 'flex';
+                document.getElementById('pod-blue').style.display = 'flex';
             }
 
             currentTurnIdx = 0;
             canRoll = true;
             isMoving = false;
             tokens = { red: [-1,-1,-1,-1], green: [-1,-1,-1,-1], yellow: [-1,-1,-1,-1], blue: [-1,-1,-1,-1] };
-            renderDicePips(1);
             
-            const firstColor = activePlayers[0];
-            document.getElementById('turn-indicator').innerText = `${firstColor.toUpperCase()}'S TURN`;
-            document.getElementById('active-player-name').innerText = firstColor.toUpperCase();
-            document.getElementById('active-player-name').style.color = COLORS[firstColor];
-            document.getElementById('dice-hint').innerText = "TAP TO ROLL";
+            ['red', 'green', 'yellow', 'blue'].forEach(col => renderDiceOnPod(col, 1));
+            document.getElementById('turn-indicator').innerText = `${activePlayers[0].toUpperCase()}'S TURN`;
             
+            updatePodUI();
             drawBoard();
         }
 
         window.onload = () => {
-            renderDicePips(1);
-            openModeModal(); // গেম শুরুতে মোড সিলেক্ট করতে বলবে
+            ['red', 'green', 'yellow', 'blue'].forEach(col => renderDiceOnPod(col, 1));
+            openModeModal();
         };
     </script>
 </body>
