@@ -63,37 +63,52 @@
             width: 100%; height: 100%; max-width: 480px; margin: 0 auto;
             background: radial-gradient(circle at 50% 30%, #188651 0%, #0d5f38 60%, #052414 100%);
             display: flex; flex-direction: column; justify-content: space-between;
-            position: relative; z-index: 1000; overflow-y: auto; padding: 20px 16px;
+            position: relative; z-index: 1000; overflow-y: auto; padding: 16px 14px;
         }
 
-        .lobby-header { text-align: center; margin-top: 10px; margin-bottom: 20px; }
-        .lobby-logo { width: 85px; height: 85px; object-fit: contain; margin-bottom: 6px; }
+        .lobby-header { text-align: center; margin-top: 6px; margin-bottom: 16px; }
+        .lobby-logo { width: 75px; height: 75px; object-fit: contain; margin-bottom: 4px; }
         .lobby-title {
-            font-size: 24px; font-weight: 900; color: var(--gold);
-            letter-spacing: 1px; text-shadow: 0 2px 6px rgba(0,0,0,0.8);
+            font-size: 22px; font-weight: 900; color: var(--gold);
+            letter-spacing: 1.5px; text-shadow: 0 2px 6px rgba(0,0,0,0.8);
         }
-        .lobby-subtitle { font-size: 12px; color: #d1e7dd; font-weight: bold; margin-top: 2px; }
+        .lobby-subtitle { font-size: 11px; color: #d1e7dd; font-weight: bold; margin-top: 2px; }
 
-        .games-grid { display: flex; flex-direction: column; gap: 12px; width: 100%; padding-bottom: 20px; }
+        /* ক্যাটাগরি সেকশন হেডার */
+        .section-title {
+            display: flex; align-items: center; gap: 8px;
+            font-size: 12px; font-weight: 900; color: var(--gold);
+            text-transform: uppercase; letter-spacing: 1px;
+            margin: 14px 0 8px 4px;
+        }
+        .section-title::after {
+            content: ''; flex: 1; height: 1px;
+            background: linear-gradient(90deg, rgba(255,215,0,0.6), transparent);
+        }
+
+        .games-grid { display: flex; flex-direction: column; gap: 10px; width: 100%; }
+        
         .game-card {
             background: linear-gradient(135deg, rgba(20, 55, 40, 0.95) 0%, rgba(10, 30, 20, 0.98) 100%);
-            border: 2px solid #ecd58a; border-radius: 14px; padding: 14px 16px;
+            border: 1.5px solid #ecd58a; border-radius: 12px; padding: 12px 14px;
             display: flex; align-items: center; justify-content: space-between;
-            box-shadow: 0 6px 18px rgba(0,0,0,0.6); cursor: pointer;
+            box-shadow: 0 4px 14px rgba(0,0,0,0.5); cursor: pointer;
+            transition: transform 0.15s ease;
         }
         .game-card:active { transform: scale(0.97); }
-        .card-info { display: flex; align-items: center; gap: 14px; }
+
+        .card-info { display: flex; align-items: center; gap: 12px; }
         .game-icon-box {
-            width: 48px; height: 48px; border-radius: 12px; background: rgba(0,0,0,0.5);
+            width: 44px; height: 44px; border-radius: 10px; background: rgba(0,0,0,0.5);
             border: 1.5px solid var(--gold); display: flex; align-items: center; justify-content: center;
-            font-size: 24px;
+            font-size: 22px;
         }
-        .game-name { font-size: 17px; font-weight: 900; color: #fff; }
-        .game-desc { font-size: 11px; color: #aaa; margin-top: 2px; }
+        .game-name { font-size: 15px; font-weight: 900; color: #fff; }
+        .game-desc { font-size: 10.5px; color: #bbb; margin-top: 2px; }
         .play-tag {
-            background: var(--btn-gold); color: #2b1d03; font-size: 12px;
-            font-weight: 900; padding: 6px 14px; border-radius: 20px; border: 1.5px solid #fff;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+            background: var(--btn-gold); color: #2b1d03; font-size: 11px;
+            font-weight: 900; padding: 5px 12px; border-radius: 18px; border: 1px solid #fff;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.4); flex-shrink: 0;
         }
     </style>
 </head>
@@ -114,99 +129,119 @@
 
     <!-- মূল লবি মেনুবার -->
     <div id="lobby-screen">
-        <div class="lobby-header">
-            <img src="logo.png" class="lobby-logo" alt="Logo" onerror="this.style.display='none'">
-            <div class="lobby-title">ROYAL GAMING ARENA</div>
-            <div class="lobby-subtitle">SELECT YOUR FAVORITE GAME</div>
+        <div>
+            <div class="lobby-header">
+                <img src="logo.png" class="lobby-logo" alt="Logo" onerror="this.style.display='none'">
+                <div class="lobby-title">ROYAL GAMING ARENA</div>
+                <div class="lobby-subtitle">ALL-IN-ONE OFFLINE & ONLINE GAMING HUB</div>
+            </div>
+
+            <!-- গ্রুপ ১: বোর্ড ও আর্কেড গেমস -->
+            <div class="section-title">🎲 Board & Strategy Games</div>
+            <div class="games-grid">
+                <!-- Royal Ludo -->
+                <div class="game-card" onclick="window.location.href='ludo.html'">
+                    <div class="card-info">
+                        <div class="game-icon-box">🎲</div>
+                        <div>
+                            <div class="game-name">Royal Ludo 3D</div>
+                            <div class="game-desc">2 & 4 Players / Smart Bot Pass & Play</div>
+                        </div>
+                    </div>
+                    <div class="play-tag">PLAY</div>
+                </div>
+
+                <!-- Grandmaster Chess -->
+                <div class="game-card" onclick="window.location.href='chess.html'">
+                    <div class="card-info">
+                        <div class="game-icon-box">♟️</div>
+                        <div>
+                            <div class="game-name">Grandmaster Chess</div>
+                            <div class="game-desc">Pro Minimax AI & 2 Player Board</div>
+                        </div>
+                    </div>
+                    <div class="play-tag">PLAY</div>
+                </div>
+
+                <!-- Neon Tic-Tac-Toe (নতুন যুক্ত) -->
+                <div class="game-card" onclick="window.location.href='tictactoe.html'">
+                    <div class="card-info">
+                        <div class="game-icon-box" style="border-color: #00f3ff;">⚡</div>
+                        <div>
+                            <div class="game-name">Neon Tic-Tac-Toe</div>
+                            <div class="game-desc">Cyberpunk Glow Grid & Unbeatable AI</div>
+                        </div>
+                    </div>
+                    <div class="play-tag">PLAY</div>
+                </div>
+            </div>
+
+            <!-- গ্রুপ ২: রয়্যাল কার্ড গেমস -->
+            <div class="section-title">♠️ Royal Card Games</div>
+            <div class="games-grid">
+                <!-- Call Break -->
+                <div class="game-card" onclick="window.location.href='callbreak.html'">
+                    <div class="card-info">
+                        <div class="game-icon-box">♠️</div>
+                        <div>
+                            <div class="game-name">Call Break</div>
+                            <div class="game-desc">Strategic Trick-Taking Card Battle</div>
+                        </div>
+                    </div>
+                    <div class="play-tag">PLAY</div>
+                </div>
+
+                <!-- 29 Card Game -->
+                <div class="game-card" onclick="window.location.href='29.html'">
+                    <div class="card-info">
+                        <div class="game-icon-box">👑</div>
+                        <div>
+                            <div class="game-name">29 Card Game</div>
+                            <div class="game-desc">Secret Trump & 28 Bid Battle</div>
+                        </div>
+                    </div>
+                    <div class="play-tag">PLAY</div>
+                </div>
+
+                <!-- Indian Rummy -->
+                <div class="game-card" onclick="window.location.href='rummy.html'">
+                    <div class="card-info">
+                        <div class="game-icon-box">🎴</div>
+                        <div>
+                            <div class="game-name">Indian Rummy</div>
+                            <div class="game-desc">13 Cards Pure Sequences & Sets</div>
+                        </div>
+                    </div>
+                    <div class="play-tag">PLAY</div>
+                </div>
+
+                <!-- Teen Patti -->
+                <div class="game-card" onclick="window.location.href='teenpatti.html'">
+                    <div class="card-info">
+                        <div class="game-icon-box">🪙</div>
+                        <div>
+                            <div class="game-name">Teen Patti</div>
+                            <div class="game-desc">3 Cards Flash, Blind & Chaal</div>
+                        </div>
+                    </div>
+                    <div class="play-tag">PLAY</div>
+                </div>
+
+                <!-- Contract Bridge -->
+                <div class="game-card" onclick="window.location.href='bridge.html'">
+                    <div class="card-info">
+                        <div class="game-icon-box">🏆</div>
+                        <div>
+                            <div class="game-name">Bridge</div>
+                            <div class="game-desc">Auction, Dummy & Contract Scoring</div>
+                        </div>
+                    </div>
+                    <div class="play-tag">PLAY</div>
+                </div>
+            </div>
         </div>
 
-        <div class="games-grid">
-            <!-- ১. Call Break -->
-            <div class="game-card" onclick="window.location.href='callbreak.html'">
-                <div class="card-info">
-                    <div class="game-icon-box">♠️</div>
-                    <div>
-                        <div class="game-name">Call Break</div>
-                        <div class="game-desc">Classic Strategic Trick-Taking Battle</div>
-                    </div>
-                </div>
-                <div class="play-tag">PLAY</div>
-            </div>
-
-            <!-- ২. Royal Ludo -->
-            <div class="game-card" onclick="window.location.href='ludo.html'">
-                <div class="card-info">
-                    <div class="game-icon-box">🎲</div>
-                    <div>
-                        <div class="game-name">Royal Ludo</div>
-                        <div class="game-desc">4 Player & 2 Player Board Game</div>
-                    </div>
-                </div>
-                <div class="play-tag">PLAY</div>
-            </div>
-
-            <!-- ৩. Grandmaster Chess (নতুন যুক্ত) -->
-            <div class="game-card" onclick="window.location.href='chess.html'">
-                <div class="card-info">
-                    <div class="game-icon-box">♟️</div>
-                    <div>
-                        <div class="game-name">Grandmaster Chess</div>
-                        <div class="game-desc">Pro AI & 2 Player Battle</div>
-                    </div>
-                </div>
-                <div class="play-tag">PLAY</div>
-            </div>
-
-            <!-- ৪. 29 Card Game -->
-            <div class="game-card" onclick="window.location.href='29.html'">
-                <div class="card-info">
-                    <div class="game-icon-box">👑</div>
-                    <div>
-                        <div class="game-name">29 Card Game</div>
-                        <div class="game-desc">Secret Trump & 28 Bid Battle</div>
-                    </div>
-                </div>
-                <div class="play-tag">PLAY</div>
-            </div>
-
-            <!-- ৫. Contract Bridge -->
-            <div class="game-card" onclick="window.location.href='bridge.html'">
-                <div class="card-info">
-                    <div class="game-icon-box">🏆</div>
-                    <div>
-                        <div class="game-name">Bridge</div>
-                        <div class="game-desc">Auction, Dummy & Scoring</div>
-                    </div>
-                </div>
-                <div class="play-tag">PLAY</div>
-            </div>
-
-            <!-- ৬. Indian Rummy -->
-            <div class="game-card" onclick="window.location.href='rummy.html'">
-                <div class="card-info">
-                    <div class="game-icon-box">🎴</div>
-                    <div>
-                        <div class="game-name">Indian Rummy</div>
-                        <div class="game-desc">13 Cards Pure Sequences & Sets</div>
-                    </div>
-                </div>
-                <div class="play-tag">PLAY</div>
-            </div>
-
-            <!-- ৭. Teen Patti -->
-            <div class="game-card" onclick="window.location.href='teenpatti.html'">
-                <div class="card-info">
-                    <div class="game-icon-box">🪙</div>
-                    <div>
-                        <div class="game-name">Teen Patti</div>
-                        <div class="game-desc">3 Cards Flash, Blind & Chaal</div>
-                    </div>
-                </div>
-                <div class="play-tag">PLAY</div>
-            </div>
-        </div>
-
-        <div style="text-align:center; font-size:11px; color:rgba(255,255,255,0.4); margin-top:15px;">
+        <div style="text-align:center; font-size:11px; color:rgba(255,255,255,0.4); margin-top:20px; padding-bottom: 10px;">
             © 2026 Royal Gaming Arena • All in One PWA Platform
         </div>
     </div>
