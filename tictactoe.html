@@ -34,7 +34,7 @@
         /* Top Bar */
         .top-bar {
             width: 100%; display: flex; justify-content: space-between; align-items: center;
-            padding: 6px 8px; background: rgba(0,0,0,0.6); z-index: 50;
+            padding: 6px 10px; background: rgba(0,0,0,0.6); z-index: 50;
             border-bottom: 2px solid rgba(0, 243, 255, 0.3); border-radius: 10px; flex-shrink: 0;
         }
         .circle-btn {
@@ -113,8 +113,15 @@
             border-radius: 12px; z-index: 50; flex-shrink: 0;
         }
 
+        .info-col {
+            display: flex; flex-direction: column; gap: 2px;
+        }
+        .mode-tag {
+            font-size: 10px; font-weight: 800; color: #8899b7; letter-spacing: 0.5px;
+        }
+
         .score-box {
-            display: flex; gap: 16px; font-size: 13px; font-weight: 900;
+            display: flex; gap: 14px; font-size: 13px; font-weight: 900;
         }
         .score-x { color: var(--neon-pink); text-shadow: 0 0 8px var(--neon-pink); }
         .score-o { color: var(--neon-blue); text-shadow: 0 0 8px var(--neon-blue); }
@@ -137,9 +144,10 @@
         .modal-btn {
             background: linear-gradient(180deg, #00f3ff 0%, #0077aa 100%);
             border: 1.5px solid #fff; color: #050811;
-            font-size: 13px; font-weight: 900; height: 40px; border-radius: 8px; cursor: pointer;
+            font-size: 13px; font-weight: 900; height: 42px; border-radius: 10px; cursor: pointer;
             width: 100%; margin-top: 10px;
         }
+        .modal-btn:active { transform: scale(0.96); }
     </style>
 </head>
 <body>
@@ -151,7 +159,7 @@
             <div class="circle-btn" onclick="openModeModal()" title="Game Mode">⚙️</div>
         </div>
 
-        <div id="hud-status">Game Started</div>
+        <div id="hud-status">Mode: Solo vs AI</div>
 
         <!-- 3x3 Grid Board -->
         <div id="board-wrapper-area">
@@ -170,26 +178,29 @@
 
         <!-- Control Panel -->
         <div id="control-panel">
-            <div class="score-box">
-                <span class="score-x">X: <b id="score-x">0</b></span>
-                <span class="score-o">O: <b id="score-o">0</b></span>
+            <div class="info-col">
+                <div class="mode-tag" id="current-mode-label">MODE: VS SMART AI</div>
+                <div class="score-box">
+                    <span class="score-x" id="tag-p1">X: <b id="score-x">0</b></span>
+                    <span class="score-o" id="tag-p2">O: <b id="score-o">0</b></span>
+                </div>
             </div>
             <div style="display:flex; gap:8px;">
                 <button class="control-btn" style="background:#c0392b; color:#fff;" onclick="resetRound()">REPLAY</button>
             </div>
         </div>
 
-        <!-- Mode Modal -->
+        <!-- Mode Select Modal (১ জন বনাম ২ জন অপশন) -->
         <div id="mode-modal" class="generic-modal">
-            <div style="font-size: 18px; font-weight: 900; color: var(--neon-blue); margin-bottom: 6px;">SELECT MODE</div>
-            <div style="font-size: 11px; color: #aaa; margin-bottom: 12px; text-align: center;">খেলার ধরণ নির্বাচন করুন</div>
-            <button class="modal-btn" onclick="setMode('ai')">🤖 VS UNBEATABLE AI</button>
-            <button class="modal-btn" style="background: linear-gradient(180deg, #ff0055 0%, #aa0038 100%); color:#fff;" onclick="setMode('2p')">👥 2 PLAYERS (Local Pass & Play)</button>
+            <div style="font-size: 18px; font-weight: 900; color: var(--neon-blue); margin-bottom: 6px;">SELECT GAME MODE</div>
+            <div style="font-size: 11px; color: #aaa; margin-bottom: 14px; text-align: center;">খেলার ফরম্যাট বেছে নিন (অফলাইন)</div>
+            <button class="modal-btn" onclick="setMode('ai')">🤖 1 PLAYER (VS UNBEATABLE AI)</button>
+            <button class="modal-btn" style="background: linear-gradient(180deg, #ff0055 0%, #aa0038 100%); color:#fff;" onclick="setMode('2p')">👥 2 PLAYERS (LOCAL PASS & PLAY)</button>
         </div>
 
         <!-- Result Modal -->
         <div id="win-modal" class="generic-modal">
-            <div style="font-size: 38px; margin-bottom: 6px;">⚡</div>
+            <div style="font-size: 38px; margin-bottom: 6px;" id="win-icon">⚡</div>
             <div style="font-size: 20px; font-weight: 900; color: var(--neon-blue);" id="win-title">X WINS!</div>
             <div style="font-size: 12px; color: #aaa; margin-top: 4px; text-align:center;" id="win-desc">Round Winner</div>
             <button class="modal-btn" onclick="resetRound(true)">PLAY NEXT ROUND</button>
@@ -200,7 +211,7 @@
         let boardState = ['', '', '', '', '', '', '', '', ''];
         let currentPlayer = 'X';
         let isGameActive = true;
-        let gameMode = 'ai'; // 'ai' or '2p'
+        let gameMode = 'ai'; // 'ai' = ১ জন বনাম বট, '2p' = ২ জন লোকাল
         let scoreX = 0;
         let scoreO = 0;
 
@@ -210,7 +221,7 @@
             [0, 4, 8], [2, 4, 6]             // Diagonals
         ];
 
-        /* Sound Synthesizer */
+        /* সাউন্ড সিন্থেসাইজার */
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         function playLaserSound(freq, dur, type = 'sine') {
             try {
@@ -233,10 +244,13 @@
 
         function handleCellClick(index) {
             if (!isGameActive || boardState[index] !== '') return;
+            
+            // AI মোডে থাকলে শুধুমাত্র X-এর চাল মানুষ দেবে
             if (gameMode === 'ai' && currentPlayer !== 'X') return;
 
             makeMove(index, currentPlayer);
 
+            // AI মোডে পরবর্তী চাল রোবট দেবে
             if (isGameActive && gameMode === 'ai' && currentPlayer === 'O') {
                 setTimeout(aiMove, 380);
             }
@@ -277,25 +291,30 @@
                 updateScoreUI();
 
                 setTimeout(() => {
-                    showEndModal(`${currentPlayer} WINS!`, `Flawless Victory by Player ${currentPlayer}`);
+                    const winText = (gameMode === 'ai') 
+                        ? (currentPlayer === 'X' ? "YOU WIN! 👑" : "AI WINS! 🤖") 
+                        : `PLAYER ${currentPlayer} WINS! 🏆`;
+                    showEndModal(winText, `Flawless Victory by ${currentPlayer}`, "👑");
                 }, 500);
                 return;
             }
 
+            // ড্র চেক
             if (!boardState.includes('')) {
                 isGameActive = false;
                 playLaserSound(240, 0.25, 'square');
                 setTimeout(() => {
-                    showEndModal("DRAW MATCH!", "Well played, perfectly balanced!");
+                    showEndModal("DRAW MATCH!", "Well played, perfectly balanced!", "⚖️");
                 }, 400);
                 return;
             }
 
+            // টার্ন বদল
             currentPlayer = (currentPlayer === 'X') ? 'O' : 'X';
             updateTurnUI();
         }
 
-        /* Minimax Unbeatable AI */
+        /* অপরাজিত মিনিম্যাক্স এআই লজিক */
         function aiMove() {
             if (!isGameActive) return;
             const bestIndex = minimax(boardState, 'O').index;
@@ -355,7 +374,11 @@
 
         function updateTurnUI() {
             const el = document.getElementById('turn-indicator');
-            el.innerText = `${currentPlayer}'S TURN`;
+            if (gameMode === 'ai') {
+                el.innerText = (currentPlayer === 'X') ? "YOUR TURN (X)" : "AI THINKING (O)";
+            } else {
+                el.innerText = `PLAYER ${currentPlayer}'S TURN`;
+            }
             el.style.color = (currentPlayer === 'X') ? 'var(--neon-pink)' : 'var(--neon-blue)';
             el.style.borderColor = (currentPlayer === 'X') ? 'var(--neon-pink)' : 'var(--neon-blue)';
         }
@@ -365,9 +388,10 @@
             document.getElementById('score-o').innerText = scoreO;
         }
 
-        function showEndModal(title, desc) {
+        function showEndModal(title, desc, icon = "⚡") {
             document.getElementById('win-title').innerText = title;
             document.getElementById('win-desc').innerText = desc;
+            document.getElementById('win-icon').innerText = icon;
             document.getElementById('win-modal').style.display = 'flex';
         }
 
@@ -391,6 +415,19 @@
             document.getElementById('mode-modal').style.display = 'none';
             scoreX = 0; scoreO = 0;
             updateScoreUI();
+
+            if (mode === 'ai') {
+                document.getElementById('current-mode-label').innerText = "MODE: 1 PLAYER (VS AI)";
+                document.getElementById('tag-p1').innerHTML = "YOU: <b id='score-x'>0</b>";
+                document.getElementById('tag-p2').innerHTML = "AI: <b id='score-o'>0</b>";
+                setHUD("Mode: Solo vs AI");
+            } else {
+                document.getElementById('current-mode-label').innerText = "MODE: 2 PLAYERS (LOCAL)";
+                document.getElementById('tag-p1').innerHTML = "X: <b id='score-x'>0</b>";
+                document.getElementById('tag-p2').innerHTML = "O: <b id='score-o'>0</b>";
+                setHUD("Mode: 2 Players Local");
+            }
+
             resetRound();
         }
 
@@ -400,7 +437,8 @@
         }
 
         window.onload = () => {
-            updateTurnUI();
+            // গেম ওপেন করলেই ১ জন নাকি ২ জন বেছে নেওয়ার উইন্ডো আসবে
+            openModeModal();
         };
     </script>
 </body>
