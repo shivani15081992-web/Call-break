@@ -125,14 +125,12 @@
 
         <div id="hud-status">Make Your Move</div>
 
-        <!-- ক্যানভাস এলাকা -->
         <div id="board-wrapper-area">
             <div id="board-container">
                 <canvas id="chessCanvas" width="640" height="640"></canvas>
             </div>
         </div>
 
-        <!-- কন্ট্রোল প্যানেল (Undo সহ) -->
         <div id="control-panel">
             <div>
                 <div style="font-size: 9px; color: #aaa; font-weight: bold;" id="mode-label">MODE: VS PRO AI</div>
@@ -145,7 +143,6 @@
             </div>
         </div>
 
-        <!-- Mode Select Modal -->
         <div id="mode-modal" class="generic-modal">
             <div style="font-size: 18px; font-weight: 900; color: var(--gold); margin-bottom: 6px;">CHESS BATTLE MODE</div>
             <div style="font-size: 11px; color: #ccc; margin-bottom: 12px; text-align: center;">খেলার ধরন নির্বাচন করুন</div>
@@ -153,7 +150,6 @@
             <button class="modal-btn" style="background:#2ecc71; color:#000;" onclick="setMode('2p')">👥 2 PLAYERS (Pass & Play)</button>
         </div>
 
-        <!-- Result Modal -->
         <div id="win-modal" class="generic-modal">
             <div style="font-size: 36px; margin-bottom: 6px;">👑</div>
             <div style="font-size: 18px; font-weight: 900; color: var(--gold);" id="win-title">CHECKMATE!</div>
@@ -174,7 +170,8 @@
         let validMoves = [];
         let isThinking = false;
         let lastMove = null;
-        let moveHistory = []; // চাল ফেরত যাওয়ার স্ট্যাক
+        let moveHistory = [];
+        let isGameOver = false;
 
         let board = [
             ['r','n','b','q','k','b','n','r'],
@@ -255,13 +252,22 @@
         function drawBoard() {
             ctx.clearRect(0, 0, C_SIZE, C_SIZE);
 
+            const inCheck = isKingInCheck(board, turn);
+
             for (let r = 0; r < 8; r++) {
                 for (let c = 0; c < 8; c++) {
                     const isLight = (r + c) % 2 === 0;
                     ctx.fillStyle = isLight ? '#f0d9b5' : '#b58863';
                     ctx.fillRect(c * CELL, r * CELL, CELL, CELL);
 
-                    // লাস্ট মুভ হাইলাইট
+                    // যদি রাজা চেকে থাকে তবে রাজার ঘর লাল রঙে হাইলাইট হবে
+                    const p = board[r][c];
+                    if (inCheck && ((turn === 'w' && p === 'K') || (turn === 'b' && p === 'k'))) {
+                        ctx.fillStyle = 'rgba(231, 76, 60, 0.7)';
+                        ctx.fillRect(c * CELL, r * CELL, CELL, CELL);
+                    }
+
+                    // আগের চালের ৩ডি হাইলাইট
                     if (lastMove) {
                         if ((lastMove.fromR === r && lastMove.fromC === c) || (lastMove.toR === r && lastMove.toC === c)) {
                             ctx.fillStyle = 'rgba(255, 215, 0, 0.45)';
@@ -337,13 +343,12 @@
 
         /* ------------------ স্মার্ট আন্ডু (Undo) ইঞ্জিন ------------------ */
         function undoMove() {
-            if (isThinking) return;
+            if (isThinking || isGameOver) return;
             if (moveHistory.length === 0) {
                 setHUD("No moves to undo!");
                 return;
             }
 
-            // VS AI মোডে চাল ২ স্টেপ রিভার্স হবে (এআই এবং ইউজারের চাল)
             const stepsToUndo = (gameMode === 'ai' && moveHistory.length >= 2) ? 2 : 1;
 
             for (let i = 0; i < stepsToUndo; i++) {
@@ -363,8 +368,41 @@
             drawBoard();
         }
 
-        /* ------------------ মুভ ক্যালকুলেশন ------------------ */
-        function getMovesForPiece(b, r, c) {
+        /* ------------------ চেকের সত্যতা যাচাই (King Safety) ------------------ */
+        function findKing(b, color) {
+            const target = (color === 'w') ? 'K' : 'k';
+            for (let r = 0; r < 8; r++) {
+                for (let c = 0; c < 8; c++) {
+                    if (b[r][c] === target) return { r, c };
+                }
+            }
+            return null;
+        }
+
+        // প্রতিপক্ষের চাল রাজার ওপর আক্রমণ করছে কিনা
+        function isKingInCheck(b, color) {
+            const kingPos = findKing(b, color);
+            if (!kingPos) return true; // রাজা নেই মানে ইতোমধ্যেই ক্যাপচার হয়েছে
+
+            const oppColor = (color === 'w') ? 'b' : 'w';
+            const oppRawMoves = getRawMoves(b, oppColor);
+            return oppRawMoves.some(m => m.toR === kingPos.r && m.toC === kingPos.c);
+        }
+
+        function getRawMoves(b, color) {
+            let moves = [];
+            for (let r = 0; r < 8; r++) {
+                for (let c = 0; c < 8; c++) {
+                    const p = b[r][c];
+                    if (p !== '.' && ((color === 'w' && p === p.toUpperCase()) || (color === 'b' && p === p.toLowerCase()))) {
+                        moves.push(...getPiecePseudoMoves(b, r, c));
+                    }
+                }
+            }
+            return moves;
+        }
+
+        function getPiecePseudoMoves(b, r, c) {
             const p = b[r][c];
             if (p === '.') return [];
             const isW = (p === p.toUpperCase());
@@ -424,13 +462,25 @@
             return moves;
         }
 
+        // আসল লিগ্যাল চাল: চাল দিলে রাজা নিরাপদ থাকে কিনা নিশ্চিত করা
+        function getLegalMovesForPiece(b, r, c) {
+            const raw = getPiecePseudoMoves(b, r, c);
+            const p = b[r][c];
+            const color = (p === p.toUpperCase()) ? 'w' : 'b';
+
+            return raw.filter(m => {
+                const nextB = makeMove(b, m);
+                return !isKingInCheck(nextB, color);
+            });
+        }
+
         function getAllLegalMoves(b, color) {
             let moves = [];
             for (let r = 0; r < 8; r++) {
                 for (let c = 0; c < 8; c++) {
                     const p = b[r][c];
                     if (p !== '.' && ((color === 'w' && p === p.toUpperCase()) || (color === 'b' && p === p.toLowerCase()))) {
-                        moves.push(...getMovesForPiece(b, r, c));
+                        moves.push(...getLegalMovesForPiece(b, r, c));
                     }
                 }
             }
@@ -467,8 +517,14 @@
         function minimax(b, depth, alpha, beta, isMaximizing) {
             if (depth === 0) return evaluateBoard(b);
 
-            const moves = getAllLegalMoves(b, isMaximizing ? 'w' : 'b');
-            if (moves.length === 0) return isMaximizing ? -99999 : 99999;
+            const color = isMaximizing ? 'w' : 'b';
+            const moves = getAllLegalMoves(b, color);
+            if (moves.length === 0) {
+                if (isKingInCheck(b, color)) {
+                    return isMaximizing ? -99999 : 99999;
+                }
+                return 0; // স্টেলমেট (Stalemate)
+            }
 
             if (isMaximizing) {
                 let maxEval = -Infinity;
@@ -513,7 +569,7 @@
 
         /* ------------------ প্লেয়ার ইন্টারঅ্যাকশন ------------------ */
         canvas.addEventListener('click', (e) => {
-            if (isThinking) return;
+            if (isThinking || isGameOver) return;
             if (gameMode === 'ai' && turn !== 'w') return;
 
             const rect = canvas.getBoundingClientRect();
@@ -529,7 +585,7 @@
 
             if (isMyPiece) {
                 selectedSquare = { r, c };
-                validMoves = getMovesForPiece(board, r, c);
+                validMoves = getLegalMovesForPiece(board, r, c);
                 playTone(450, 'sine', 0.05, 0.05);
                 drawBoard();
                 return;
@@ -548,14 +604,25 @@
         });
 
         function executeMove(m) {
-            // চাল দেওয়ার আগে বর্তমান স্টেট হিস্ট্রিতে পুশ
             moveHistory.push({
                 board: board.map(row => [...row]),
                 turn: turn,
                 lastMove: lastMove ? { ...lastMove } : null
             });
 
-            const isCapture = (board[m.toR][m.toC] !== '.');
+            const destPiece = board[m.toR][m.toC];
+            const isCapture = (destPiece !== '.');
+
+            // যদি রাজা খাওয়া হয় (সরাসরি ক্যাপচার ফেইলসেফ)
+            if (destPiece === 'K' || destPiece === 'k') {
+                board = makeMove(board, m);
+                lastMove = m;
+                drawBoard();
+                const winner = (destPiece === 'k') ? 'WHITE' : 'BLACK';
+                showGameOver(`${winner} CAPTURED THE KING! GAME OVER.`);
+                return;
+            }
+
             board = makeMove(board, m);
             lastMove = m;
             selectedSquare = null;
@@ -565,15 +632,36 @@
             else playTone(540, 'sine', 0.08, 0.08);
 
             turn = (turn === 'w') ? 'b' : 'w';
-            updateUI();
-            drawBoard();
 
-            const nextMoves = getAllLegalMoves(board, turn);
-            if (nextMoves.length === 0) {
-                const winner = (turn === 'w') ? 'BLACK' : 'WHITE';
-                showGameOver(`${winner} WINS BY CHECKMATE!`);
+            // বোর্ড চেক করুন উভয় রাজা উপস্থিত আছে কিনা
+            if (!findKing(board, 'w')) {
+                showGameOver("BLACK WINS! WHITE KING DEFEATED.");
                 return;
             }
+            if (!findKing(board, 'b')) {
+                showGameOver("WHITE WINS! BLACK KING DEFEATED.");
+                return;
+            }
+
+            // চেকমেট ও স্টেলমেট নির্ণয়
+            const inCheck = isKingInCheck(board, turn);
+            const nextMoves = getAllLegalMoves(board, turn);
+
+            if (nextMoves.length === 0) {
+                if (inCheck) {
+                    const winner = (turn === 'w') ? 'BLACK' : 'WHITE';
+                    showGameOver(`${winner} WINS BY CHECKMATE!`);
+                } else {
+                    showGameOver("STALEMATE! DRAW MATCH.");
+                }
+                return;
+            } else if (inCheck) {
+                playTone(320, 'sawtooth', 0.2, 0.2);
+                setHUD("CHECK!");
+            }
+
+            updateUI();
+            drawBoard();
 
             if (gameMode === 'ai' && turn === 'b') {
                 isThinking = true;
@@ -581,7 +669,11 @@
                 document.getElementById('game-state-text').innerText = "AI THINKING...";
                 setTimeout(() => {
                     const aiMove = getBestMoveAI();
-                    if (aiMove) executeMove(aiMove);
+                    if (aiMove) {
+                        executeMove(aiMove);
+                    } else {
+                        showGameOver("WHITE WINS BY CHECKMATE!");
+                    }
                     isThinking = false;
                 }, 400);
             }
@@ -606,6 +698,7 @@
         }
 
         function showGameOver(desc) {
+            isGameOver = true;
             document.getElementById('win-desc').innerText = desc;
             document.getElementById('win-modal').style.display = 'flex';
             playTone(600, 'sine', 0.3, 0.2);
@@ -628,6 +721,7 @@
             lastMove = null;
             moveHistory = [];
             isThinking = false;
+            isGameOver = false;
             document.getElementById('win-modal').style.display = 'none';
             updateUI();
             drawBoard();
