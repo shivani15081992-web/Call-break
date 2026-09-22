@@ -8,10 +8,10 @@
         :root {
             --bg-felt: #0d47a1;
             --gold: #ffd700;
-            --c-red: #e71d36;
-            --c-green: #009b48;
-            --c-yellow: #ffeb3b;
-            --c-blue: #2196f3;
+            --c-red: #e52d27;
+            --c-green: #00b04f;
+            --c-yellow: #ffc107;
+            --c-blue: #03a9f4;
         }
 
         * {
@@ -30,9 +30,10 @@
             background: radial-gradient(circle at 50% 30%, #1565c0 0%, #0d47a1 60%, #021a38 100%);
             display: flex; flex-direction: column; align-items: center;
             justify-content: flex-start; position: relative; overflow: hidden;
-            padding: 6px 8px max(8px, env(safe-area-inset-bottom, 8px)) 8px;
+            padding: 4px 6px max(6px, env(safe-area-inset-bottom, 6px)) 6px;
         }
 
+        /* Top Bar */
         .top-bar {
             width: 100%; display: flex; justify-content: space-between; align-items: center;
             padding: 4px 8px; background: rgba(0,0,0,0.55); z-index: 50;
@@ -61,7 +62,7 @@
         }
         #hud-status.show { opacity: 1; }
 
-        /* বোর্ড এবং ৪টি ডাইস বক্স সমন্বিত সেন্টার ফ্রেম */
+        /* সমন্বিত সেন্টার ফ্রেম */
         #game-stage-wrapper {
             flex: 1; width: 100%; display: flex;
             align-items: center; justify-content: center;
@@ -79,6 +80,7 @@
             padding: 0; flex-shrink: 0;
         }
 
+        /* ডাইস পড ডিজাইন */
         .player-pod-box {
             display: flex; align-items: center; justify-content: space-between;
             width: 102px; height: 46px; padding: 3px 6px;
@@ -128,7 +130,7 @@
             width: min(94vw, calc(100dvh - 200px));
             height: min(94vw, calc(100dvh - 200px));
             max-width: 420px; max-height: 420px;
-            border: 4px solid #000; border-radius: 6px;
+            border: 4px solid #111; border-radius: 6px;
             box-shadow: 0 8px 30px rgba(0,0,0,0.85);
             background: #fff; position: relative; flex-shrink: 0;
         }
@@ -162,10 +164,9 @@
 
         <div id="hud-status">Roll Dice!</div>
 
-        <!-- কেন্দ্রিক ফ্রেম: বোর্ড এবং ৪টি ডাইস বক্স -->
         <div id="game-stage-wrapper">
             <div id="central-board-unit">
-                <!-- উপরের ডাইস বক্স রো (Red এবং Green) -->
+                <!-- উপরের রো: রেড (বাঁয়ে) এবং গ্রিন (ডানে) -->
                 <div class="player-pods-row">
                     <div class="player-pod-box active-turn" id="pod-red" onclick="handlePodClick('red')">
                         <div class="pod-pin-preview" id="pin-red"></div>
@@ -183,7 +184,7 @@
                     <canvas id="ludoCanvas" width="600" height="600"></canvas>
                 </div>
 
-                <!-- নিচের ডাইস বক্স রো (Blue এবং Yellow) -->
+                <!-- নিচের রো: ব্লু (বাঁয়ে) এবং ইয়েলো (ডানে) -->
                 <div class="player-pods-row">
                     <div class="player-pod-box" id="pod-blue" onclick="handlePodClick('blue')">
                         <div class="pod-pin-preview" id="pin-blue"></div>
@@ -222,11 +223,12 @@
         const C_SIZE = 600;
         const CELL = C_SIZE / 15; // 40px
 
+        // স্ক্রিনশট অনুযায়ী খাঁটি কালার প্যালেট
         const COLORS = {
-            red: '#e71d36',
-            green: '#009b48',
-            yellow: '#cfa200',
-            blue: '#1e88e5'
+            red: '#e52d27',
+            green: '#00b04f',
+            yellow: '#ffc107',
+            blue: '#03a9f4'
         };
 
         const PLAYER_NAMES = {
@@ -240,38 +242,39 @@
         let activePlayers = ['red', 'green', 'yellow', 'blue'];
         let gameMode = 'bot';
 
-        // খাঁটি ৫২ ঘরের ঘড়ির কাঁটার দিকের ম্যাথমেটিক্যাল ট্র্যাক [row, col]
+        // সম্পূর্ণ স্ট্যান্ডার্ড ৫২ সেলের লুপ ট্র্যাক [row, col]
         const TRACK = [
+            // রেড স্টার্ট পয়েন্ট থেকে গ্রিনের দিকে যাত্রা
             [6,1],[6,2],[6,3],[6,4],[6,5],
             [5,6],[4,6],[3,6],[2,6],[1,6],[0,6],
-            [0,7],[0,8],
+            [0,7],[0,8], // গ্রিন স্টার্টিং এরিয়া
             [1,8],[2,8],[3,8],[4,8],[5,8],
             [6,9],[6,10],[6,11],[6,12],[6,13],[6,14],
-            [7,14],[8,14],
+            [7,14],[8,14], // ইয়েলো স্টার্টিং এরিয়া
             [8,13],[8,12],[8,11],[8,10],[8,9],
             [9,8],[10,8],[11,8],[12,8],[13,8],[14,8],
-            [14,7],[14,6],
+            [14,7],[14,6], // ব্লু স্টার্টিং এরিয়া
             [13,6],[12,6],[11,6],[10,6],[9,6],
             [8,5],[8,4],[8,3],[8,2],[8,1],[8,0],
             [7,0],[6,0]
         ];
 
-        // শুরু হওয়ার সঠিক ইনডেক্স
+        // স্ক্রিনশটের হুবহু চার দলের স্টার্ট ইনডেক্স
         const START_IDX = { red: 0, green: 13, yellow: 26, blue: 39 };
 
-        // ৮টি সম্পূর্ণ নিরাপদ স্টার (৪টি শুরুর ঘর + ৪টি লুপ-টার্ন সেল)
+        // স্ক্রিনশটের ৮টি স্টার পজিশন
         const SAFE_STARS = [
             [6, 1],  // Red Start Cell
-            [8, 2],  // Red Safe
+            [8, 2],  // Red Safe Cell
             [1, 8],  // Green Start Cell
-            [2, 6],  // Green Safe
+            [2, 6],  // Green Safe Cell
             [8, 13], // Yellow Start Cell
-            [6, 12], // Yellow Safe
+            [6, 12], // Yellow Safe Cell
             [13, 6], // Blue Start Cell
-            [12, 8]  // Blue Safe
+            [12, 8]  // Blue Safe Cell
         ];
 
-        // ৪টি কালার অ্যারো (স্টার্টিং সেলের দিকে নির্দেশ করে)
+        // স্ক্রিনশটের চারটি নির্দিষ্ট রঙের অ্যারো
         const START_ARROWS = [
             { r: 6, c: 0, dir: '→', col: COLORS.red },
             { r: 0, c: 8, dir: '↓', col: COLORS.green },
@@ -279,7 +282,7 @@
             { r: 14, c: 6, dir: '↑', col: COLORS.blue }
         ];
 
-        // খাঁটি হোম স্ট্রেচ পাথ
+        // স্ক্রিনশটের খাঁটি হোম রানওয়ে (কেন্দ্রে যাওয়ার পথ)
         const HOME_STRETCH = {
             red: [[7,1],[7,2],[7,3],[7,4],[7,5],[7,6]],
             green: [[1,7],[2,7],[3,7],[4,7],[5,7],[6,7]],
@@ -287,7 +290,7 @@
             blue: [[13,7],[12,7],[11,7],[10,7],[9,7],[8,7]]
         };
 
-        // খাঁটি কর্নার বেস স্লট [col, row]
+        // স্ক্রিনশট অনুযায়ী চার কোণার বেস পজিশন [col, row]
         const BASE_SLOTS = {
             red: [[1.6,1.6], [3.6,1.6], [1.6,3.6], [3.6,3.6]],            // উপরে বাঁয়ে রেড
             green: [[10.6,1.6], [12.6,1.6], [10.6,3.6], [12.6,3.6]],      // উপরে ডানে গ্রিন
@@ -310,7 +313,7 @@
         let winnersOrder = []; 
         let isCrownAnimating = false;
 
-        /* ------------------ সাউন্ড ইঞ্জিন ------------------ */
+        /* ------------------ অডিও সিন্থেসাইজার ------------------ */
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         function playTone(freq, type, dur, gainVal = 0.1) {
             try {
@@ -361,7 +364,7 @@
                 ctx.stroke();
             }
 
-            // হোম পাথওয়ে
+            // হোম পাথওয়ে (স্ক্রিনশটের মতো ৪টি রঙিন সোজা লাইন)
             for (let i = 1; i <= 5; i++) {
                 fillCell(7, i, COLORS.red);
                 fillCell(i, 7, COLORS.green);
@@ -375,7 +378,7 @@
             fillCell(8, 13, COLORS.yellow);
             fillCell(13, 6, COLORS.blue);
 
-            // ৪টি কর্নার বেস
+            // চার কোণার ৪টি বড় বেস (স্ক্রিনশট অনুযায়ী কালার পজিশন)
             drawBase(0, 0, COLORS.red, 'red', 'You');
             drawBase(9 * CELL, 0, COLORS.green, 'green', 'AI 1');
             drawBase(9 * CELL, 9 * CELL, COLORS.yellow, 'yellow', 'AI 2');
@@ -724,7 +727,7 @@
             let gainedBonusTurn = false;
 
             if (cur === -1 && diceVal === 6) {
-                tokens[color][idx] = 0; // স্টার্টিং পয়েন্টে বসবে
+                tokens[color][idx] = 0; // স্টার্টিং পয়েন্টে প্রবেশ
                 playStepSound();
             } else {
                 tokens[color][idx] += diceVal;
