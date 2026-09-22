@@ -28,12 +28,12 @@
         #game-screen {
             width: 100vw; height: 100dvh; max-width: 480px; margin: 0 auto;
             background: radial-gradient(circle at 50% 30%, #1565c0 0%, #0d47a1 60%, #021a38 100%);
-            display: flex; flex-direction: column; justify-content: space-between;
-            align-items: center; position: relative; overflow: hidden;
-            padding: 4px 6px max(6px, env(safe-area-inset-bottom, 6px)) 6px;
+            display: flex; flex-direction: column; align-items: center;
+            justify-content: flex-start; position: relative; overflow: hidden;
+            padding: 6px 8px max(8px, env(safe-area-inset-bottom, 8px)) 8px;
         }
 
-        /* Top Header */
+        /* Top Bar */
         .top-bar {
             width: 100%; display: flex; justify-content: space-between; align-items: center;
             padding: 4px 8px; background: rgba(0,0,0,0.55); z-index: 50;
@@ -62,24 +62,28 @@
         }
         #hud-status.show { opacity: 1; }
 
-        /* বোর্ড এবং ডাইস বক্সের সমন্বিত সেন্টার স্টেজ (বোর্ডের কাছাকাছি অবস্থান নিশ্চিত করে) */
-        #game-center-stage {
-            flex: 1; width: 100%; min-height: 0;
+        /* বোর্ড এবং ৪টি ডাইস বক্সের সমন্বিত সেন্টার ফ্রেম */
+        #game-stage-wrapper {
+            flex: 1; width: 100%; display: flex;
+            align-items: center; justify-content: center;
+        }
+
+        #central-board-unit {
             display: flex; flex-direction: column;
             align-items: center; justify-content: center;
-            gap: 4px; z-index: 20;
+            gap: 8px; /* আপনার মার্ক করা নির্দিষ্ট দূরত্ব */
         }
 
         .player-pods-row {
-            width: min(94vw, calc(100dvh - 190px)); max-width: 420px;
+            width: min(94vw, calc(100dvh - 200px)); max-width: 420px;
             display: flex; justify-content: space-between; align-items: center;
-            padding: 0; z-index: 30; flex-shrink: 0;
+            padding: 0; flex-shrink: 0;
         }
 
-        /* প্রিমিয়াম কমপ্যাক্ট মেটালিক ডাইস বক্স */
+        /* প্রিমিয়াম মেটালিক ডাইস বক্স */
         .player-pod-box {
             display: flex; align-items: center; justify-content: space-between;
-            width: 95px; height: 44px; padding: 3px 5px;
+            width: 102px; height: 46px; padding: 3px 6px;
             background: linear-gradient(180deg, #1976d2 0%, #0d47a1 100%);
             border: 2px solid #64b5f6; border-radius: 8px;
             box-shadow: 0 4px 8px rgba(0,0,0,0.6), inset 0 1px 2px rgba(255,255,255,0.4);
@@ -87,12 +91,12 @@
         }
         .player-pod-box.active-turn {
             border-color: #ffd700;
-            box-shadow: 0 0 12px rgba(255, 215, 0, 0.9), inset 0 0 6px rgba(255,215,0,0.4);
-            transform: scale(1.04);
+            box-shadow: 0 0 14px rgba(255, 215, 0, 0.9), inset 0 0 6px rgba(255,215,0,0.4);
+            transform: scale(1.05);
         }
 
         .pod-dice-slot {
-            width: 36px; height: 36px; background: linear-gradient(135deg, #ffebee 0%, #ffcdd2 100%);
+            width: 38px; height: 38px; background: linear-gradient(135deg, #ffebee 0%, #ffcdd2 100%);
             border-radius: 6px; border: 1.5px solid #d32f2f;
             display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(3, 1fr);
             padding: 2.5px; box-shadow: inset 0 2px 4px rgba(0,0,0,0.25);
@@ -102,7 +106,7 @@
         }
 
         .pod-pin-preview {
-            width: 28px; height: 28px; display: flex; align-items: center; justify-content: center;
+            width: 30px; height: 30px; display: flex; align-items: center; justify-content: center;
         }
 
         .pip {
@@ -124,8 +128,8 @@
 
         /* সেন্ট্রাল বোর্ড ফ্রেম */
         #board-container {
-            width: min(94vw, calc(100dvh - 190px));
-            height: min(94vw, calc(100dvh - 190px));
+            width: min(94vw, calc(100dvh - 200px));
+            height: min(94vw, calc(100dvh - 200px));
             max-width: 420px; max-height: 420px;
             border: 4px solid #000; border-radius: 6px;
             box-shadow: 0 8px 30px rgba(0,0,0,0.85);
@@ -153,7 +157,6 @@
 <body>
 
     <div id="game-screen">
-        <!-- Top Bar -->
         <div class="top-bar">
             <div class="circle-btn" onclick="window.location.href='index.html'" title="Main Menu">🏠</div>
             <div class="player-status-pill" id="turn-indicator">YOU'S TURN (RED)</div>
@@ -162,42 +165,41 @@
 
         <div id="hud-status">Roll Dice!</div>
 
-        <!-- সেন্টার স্টেজ: বোর্ড ও ডাইস বক্স একদম কাছাকাছি সন্নিবিষ্ট -->
-        <div id="game-center-stage">
-            <!-- উপরের ডাইস রো (AI 1 ও AI 2) -->
-            <div class="player-pods-row">
-                <div class="player-pod-box" id="pod-green" onclick="handlePodClick('green')">
-                    <div class="pod-pin-preview" id="pin-green"></div>
-                    <div class="pod-dice-slot" id="dice-green"></div>
+        <!-- কেন্দ্রিক ফ্রেম: বোর্ড এবং ৪টি ডাইস বক্স সবসময় পাশাপাশি যুক্ত থাকবে -->
+        <div id="game-stage-wrapper">
+            <div id="central-board-unit">
+                <!-- উপরের ডাইস বক্স রো (আপনার মার্ক করা স্থানে) -->
+                <div class="player-pods-row">
+                    <div class="player-pod-box" id="pod-green" onclick="handlePodClick('green')">
+                        <div class="pod-pin-preview" id="pin-green"></div>
+                        <div class="pod-dice-slot" id="dice-green"></div>
+                    </div>
+
+                    <div class="player-pod-box" id="pod-yellow" onclick="handlePodClick('yellow')">
+                        <div class="pod-dice-slot" id="dice-yellow"></div>
+                        <div class="pod-pin-preview" id="pin-yellow"></div>
+                    </div>
                 </div>
 
-                <div class="player-pod-box" id="pod-yellow" onclick="handlePodClick('yellow')">
-                    <div class="pod-dice-slot" id="dice-yellow"></div>
-                    <div class="pod-pin-preview" id="pin-yellow"></div>
-                </div>
-            </div>
-
-            <!-- মূল লুডু বোর্ড ক্যানভাস -->
-            <div id="board-container">
-                <canvas id="ludoCanvas" width="600" height="600"></canvas>
-            </div>
-
-            <!-- নিচের ডাইস রো (You ও AI 3) -->
-            <div class="player-pods-row">
-                <div class="player-pod-box active-turn" id="pod-red" onclick="handlePodClick('red')">
-                    <div class="pod-pin-preview" id="pin-red"></div>
-                    <div class="pod-dice-slot" id="dice-red"></div>
+                <!-- ক্যানভাস বোর্ড -->
+                <div id="board-container">
+                    <canvas id="ludoCanvas" width="600" height="600"></canvas>
                 </div>
 
-                <div class="player-pod-box" id="pod-blue" onclick="handlePodClick('blue')">
-                    <div class="pod-dice-slot" id="dice-blue"></div>
-                    <div class="pod-pin-preview" id="pin-blue"></div>
+                <!-- নিচের ডাইস বক্স রো (আপনার মার্ক করা স্থানে) -->
+                <div class="player-pods-row">
+                    <div class="player-pod-box active-turn" id="pod-red" onclick="handlePodClick('red')">
+                        <div class="pod-pin-preview" id="pin-red"></div>
+                        <div class="pod-dice-slot" id="dice-red"></div>
+                    </div>
+
+                    <div class="player-pod-box" id="pod-blue" onclick="handlePodClick('blue')">
+                        <div class="pod-dice-slot" id="dice-blue"></div>
+                        <div class="pod-pin-preview" id="pin-blue"></div>
+                    </div>
                 </div>
             </div>
         </div>
-
-        <!-- খালি ফুটার স্পেসার (ভারসাম্য বজায় রাখতে) -->
-        <div style="height: 2px;"></div>
 
         <!-- Mode Modal -->
         <div id="mode-modal" class="generic-modal">
@@ -208,7 +210,7 @@
             <button class="modal-btn" style="background:#3498db; color:#fff;" onclick="setGameMode('4p')">👨‍👩‍👧‍👦 4 PLAYERS (Pass & Play)</button>
         </div>
 
-        <!-- Win Final Modal -->
+        <!-- Win Modal -->
         <div id="win-modal" class="generic-modal">
             <div style="font-size: 36px; margin-bottom: 6px;">👑</div>
             <div style="font-size: 18px; font-weight: 900; color: var(--gold);" id="win-title">MATCH FINISHED!</div>
@@ -298,7 +300,7 @@
         let winnersOrder = []; 
         let isCrownAnimating = false;
 
-        /* ------------------ সাউন্ড ইঞ্জিন ------------------ */
+        /* সাউন্ড ইঞ্জিন */
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         function playTone(freq, type, dur, gainVal = 0.1) {
             try {
@@ -570,7 +572,7 @@
             ctx.restore();
         }
 
-        /* ------------------ পিন প্রিভিউ ও ডাইস রেন্ডারিং ------------------ */
+        /* ------------------ ডাইস ও প্রিভিউ ------------------ */
         function renderPodPreviewPins() {
             ['red', 'green', 'yellow', 'blue'].forEach(col => {
                 const el = document.getElementById(`pin-${col}`);
