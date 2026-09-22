@@ -6,13 +6,12 @@
     <title>Royal Ludo Championship</title>
     <style>
         :root {
-            --bg-felt: #0d5f38;
+            --bg-felt: #0d47a1;
             --gold: #ffd700;
-            --gold-btn: linear-gradient(180deg, #ecd58a 0%, #a88434 100%);
             --c-red: #e71d36;
             --c-green: #009b48;
-            --c-yellow: #cfa200;
-            --c-blue: #1e88e5;
+            --c-yellow: #ffeb3b;
+            --c-blue: #2196f3;
         }
 
         * {
@@ -23,15 +22,15 @@
 
         html, body {
             width: 100%; height: 100%;
-            background: #05140d; overflow: hidden;
+            background: #021a38; overflow: hidden;
         }
 
         #game-screen {
             width: 100vw; height: 100dvh; max-width: 480px; margin: 0 auto;
-            background: radial-gradient(circle at 50% 35%, #188651 0%, var(--bg-felt) 70%, #03150c 100%);
+            background: radial-gradient(circle at 50% 30%, #1565c0 0%, #0d47a1 60%, #021a38 100%);
             display: flex; flex-direction: column; justify-content: space-between;
             align-items: center; position: relative; overflow: hidden;
-            padding: 4px 6px max(8px, env(safe-area-inset-bottom, 8px)) 6px;
+            padding: 4px 6px max(6px, env(safe-area-inset-bottom, 6px)) 6px;
         }
 
         /* Top Header */
@@ -48,15 +47,14 @@
         .circle-btn:active { transform: scale(0.92); }
 
         .player-status-pill {
-            background: rgba(10, 25, 18, 0.95); border: 2px solid var(--gold);
+            background: rgba(4, 15, 30, 0.95); border: 2px solid var(--gold);
             padding: 3px 12px; border-radius: 18px; color: #fff; font-size: 11px; font-weight: 900;
             letter-spacing: 0.5px; box-shadow: 0 0 10px rgba(0,0,0,0.5);
         }
 
-        /* HUD Alert */
         #hud-status {
-            position: absolute; top: 10%; left: 50%; transform: translate(-50%, -50%);
-            background: rgba(4, 25, 15, 0.96); border: 2px solid var(--gold);
+            position: absolute; top: 9%; left: 50%; transform: translate(-50%, -50%);
+            background: rgba(4, 15, 30, 0.96); border: 2px solid var(--gold);
             padding: 4px 14px; border-radius: 20px; color: #fff; font-size: 11px;
             font-weight: 900; text-transform: uppercase; letter-spacing: 1px;
             box-shadow: 0 0 16px rgba(255, 215, 0, 0.5); z-index: 100; pointer-events: none;
@@ -64,100 +62,90 @@
         }
         #hud-status.show { opacity: 1; }
 
-        /* ৪টি কোণার প্লেয়ার পড রো */
+        /* বোর্ডের খুব কাছে থাকা ছবির মতো ডাইস পড রো */
         .player-pods-row {
-            width: 100%; display: flex; justify-content: space-between; align-items: center;
-            padding: 2px 4px; z-index: 30; flex-shrink: 0;
+            width: min(96vw, calc(100dvh - 120px)); max-width: 440px;
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 0 4px; z-index: 30; flex-shrink: 0;
         }
 
-        .player-pod {
-            display: flex; align-items: center; gap: 8px;
-            background: rgba(0,0,0,0.65); border: 2px solid rgba(255,255,255,0.25);
-            padding: 4px 8px; border-radius: 12px; transition: all 0.25s ease;
-            position: relative; opacity: 0.55;
+        /* ছবির মতো মেটালিক গ্লস প্যানেল বক্স */
+        .player-pod-box {
+            display: flex; align-items: center; justify-content: space-between;
+            width: 105px; height: 50px; padding: 4px 6px;
+            background: linear-gradient(180deg, #1976d2 0%, #0d47a1 100%);
+            border: 2px solid #64b5f6; border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.6), inset 0 1px 2px rgba(255,255,255,0.4);
+            cursor: pointer; position: relative; transition: all 0.2s ease;
         }
-        .player-pod.active-turn {
-            opacity: 1; border-color: var(--gold);
-            box-shadow: 0 0 14px rgba(255,215,0,0.7); transform: scale(1.05);
+        .player-pod-box.active-turn {
+            border-color: #ffd700;
+            box-shadow: 0 0 14px rgba(255, 215, 0, 0.9), inset 0 0 8px rgba(255,215,0,0.4);
+            transform: scale(1.05);
         }
 
-        .pod-avatar {
-            width: 32px; height: 32px; border-radius: 50%;
-            display: flex; align-items: center; justify-content: center;
-            font-size: 16px; border: 2px solid #fff; box-shadow: 0 2px 5px rgba(0,0,0,0.5);
-        }
-        .pod-info { display: flex; flex-direction: column; line-height: 1.1; }
-        .pod-name { font-size: 11px; font-weight: 900; color: #fff; text-transform: uppercase; }
-        .pod-hint { font-size: 8px; font-weight: bold; color: var(--gold); }
-
-        /* প্রতিটি পডের ৩ডি ডাইস */
-        .pod-dice {
-            width: 38px; height: 38px;
-            background: radial-gradient(circle at 35% 35%, #ffffff 0%, #f1f2f6 60%, #dfe4ea 100%);
-            border-radius: 8px;
-            box-shadow: 0 3px 0 #8395a7, 0 5px 10px rgba(0,0,0,0.7), inset 0 2px 3px rgba(255,255,255,0.9);
-            border: 1.5px solid #ced6e0;
+        /* পডের ভেতরের ডাইস প্লেস/হোল্ডার */
+        .pod-dice-slot {
+            width: 42px; height: 42px; background: linear-gradient(135deg, #ffebee 0%, #ffcdd2 100%);
+            border-radius: 6px; border: 1.5px solid #d32f2f;
             display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(3, 1fr);
-            padding: 4px; cursor: pointer; transition: transform 0.15s;
+            padding: 3px; box-shadow: inset 0 2px 4px rgba(0,0,0,0.25);
         }
-        .player-pod.active-turn .pod-dice {
-            animation: dicePulse 1s infinite alternate;
-            border-color: #fff;
-        }
-        @keyframes dicePulse {
-            from { box-shadow: 0 0 6px rgba(255,215,0,0.6); }
-            to { box-shadow: 0 0 14px rgba(255,215,0,1); transform: scale(1.08); }
+        .pod-dice-slot.empty {
+            background: rgba(0,0,0,0.25); border: 1px dashed rgba(255,255,255,0.3);
         }
 
-        .pod-dice.rolling {
-            animation: proDiceRoll 0.45s ease-in-out !important;
-        }
-        @keyframes proDiceRoll {
-            0% { transform: rotate(0deg) scale(0.9); }
-            40% { transform: rotate(180deg) scale(1.2); }
-            80% { transform: rotate(320deg) scale(1.05); }
-            100% { transform: rotate(360deg) scale(1); }
+        .pod-pin-preview {
+            width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;
         }
 
         .pip {
-            width: 6.5px; height: 6.5px; background: radial-gradient(circle at 40% 40%, #2f3542, #000);
-            border-radius: 50%; align-self: center; justify-self: center;
-            box-shadow: inset 0 1px 1px rgba(0,0,0,0.8);
+            width: 7px; height: 7px; background: #212121; border-radius: 50%;
+            align-self: center; justify-self: center;
         }
         .pip.red-pip {
-            background: radial-gradient(circle at 35% 35%, #ff4757, #b33939) !important;
-            width: 8.5px; height: 8.5px;
+            background: #d32f2f !important; width: 9px; height: 9px;
+        }
+
+        .pod-dice-slot.rolling {
+            animation: podDiceRoll 0.45s ease-in-out !important;
+        }
+        @keyframes podDiceRoll {
+            0% { transform: rotate(0deg) scale(0.9); }
+            50% { transform: rotate(180deg) scale(1.15); }
+            100% { transform: rotate(360deg) scale(1); }
         }
 
         /* বোর্ড কন্টেইনার */
         #board-wrapper-area {
             flex: 1; width: 100%; min-height: 0; display: flex;
             align-items: center; justify-content: center;
-            padding: 2px; overflow: hidden;
+            padding: 2px 0; overflow: hidden;
         }
 
         #board-container {
-            width: min(96vw, calc(100dvh - 160px));
-            height: min(96vw, calc(100dvh - 160px));
+            width: min(96vw, calc(100dvh - 145px));
+            height: min(96vw, calc(100dvh - 145px));
             max-width: 440px; max-height: 440px;
-            border: 6px solid #2d1808; border-radius: 12px;
-            box-shadow: 0 8px 25px rgba(0,0,0,0.85), 0 0 15px rgba(255,215,0,0.3);
+            border: 4px solid #000; border-radius: 6px;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.85);
             background: #fff; position: relative;
         }
 
         canvas {
-            width: 100%; height: 100%; display: block; border-radius: 6px;
+            width: 100%; height: 100%; display: block; border-radius: 2px;
         }
 
         /* Generic Modal */
         .generic-modal {
             position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            width: 90%; max-width: 320px; background: #18222d; border: 2px solid #bfa15f;
+            width: 90%; max-width: 320px; background: #0d1b2a; border: 2px solid #bfa15f;
             border-radius: 14px; padding: 18px; color: #fff; z-index: 200;
             display: none; flex-direction: column; align-items: center; box-shadow: 0 15px 50px rgba(0,0,0,0.9);
         }
         .modal-btn {
-            background: var(--gold-btn); border: 2px solid #fff; color: #3b2803;
+            background: linear-gradient(180deg, #ecd58a 0%, #a88434 100%);
+            border: 2px solid #fff; color: #3b2803;
             font-size: 14px; font-weight: bold; height: 40px; border-radius: 8px; cursor: pointer;
             width: 100%; margin-top: 10px;
         }
@@ -169,62 +157,42 @@
         <!-- Top Bar -->
         <div class="top-bar">
             <div class="circle-btn" onclick="window.location.href='index.html'" title="Main Menu">🏠</div>
-            <div class="player-status-pill" id="turn-indicator">RED'S TURN</div>
+            <div class="player-status-pill" id="turn-indicator">YOU'S TURN (RED)</div>
             <div class="circle-btn" onclick="openModeModal()" title="Game Mode">⚙️</div>
         </div>
 
         <div id="hud-status">Roll Dice!</div>
 
-        <!-- ওপরের দুটি প্লেয়ার পড (রেড ও গ্রিন) -->
-        <div class="player-pods-row">
-            <!-- Red Pod (Top Left) -->
-            <div class="player-pod active-turn" id="pod-red" onclick="handlePodDiceClick('red')">
-                <div class="pod-avatar" style="background: var(--c-red);">🧔</div>
-                <div class="pod-info">
-                    <span class="pod-name" style="color: #ff7675;">RED (YOU)</span>
-                    <span class="pod-hint" id="hint-red">TAP DICE</span>
-                </div>
-                <div class="pod-dice" id="dice-red"></div>
+        <!-- ওপরের ডাইস বক্স রো (AI 1 / Green এবং AI 2 / Yellow) -->
+        <div class="player-pods-row" style="margin-bottom: 2px;">
+            <div class="player-pod-box" id="pod-green" onclick="handlePodClick('green')">
+                <div class="pod-pin-preview" id="pin-green"></div>
+                <div class="pod-dice-slot" id="dice-green"></div>
             </div>
 
-            <!-- Green Pod (Top Right) -->
-            <div class="player-pod" id="pod-green" onclick="handlePodDiceClick('green')">
-                <div class="pod-dice" id="dice-green"></div>
-                <div class="pod-info" style="text-align: right;">
-                    <span class="pod-name" style="color: #55efc4;">GREEN</span>
-                    <span class="pod-hint" id="hint-green">WAIT</span>
-                </div>
-                <div class="pod-avatar" style="background: var(--c-green);">👦</div>
+            <div class="player-pod-box" id="pod-yellow" onclick="handlePodClick('yellow')">
+                <div class="pod-dice-slot" id="dice-yellow"></div>
+                <div class="pod-pin-preview" id="pin-yellow"></div>
             </div>
         </div>
 
-        <!-- সেন্ট্রাল লুডু বোর্ড ক্যানভাস -->
+        <!-- ক্যানভাস বোর্ড -->
         <div id="board-wrapper-area">
             <div id="board-container">
                 <canvas id="ludoCanvas" width="600" height="600"></canvas>
             </div>
         </div>
 
-        <!-- নিচের দুটি প্লেয়ার পড (ব্লু ও ইয়েলো) -->
-        <div class="player-pods-row">
-            <!-- Blue Pod (Bottom Left) -->
-            <div class="player-pod" id="pod-blue" onclick="handlePodDiceClick('blue')">
-                <div class="pod-avatar" style="background: var(--c-blue);">👩</div>
-                <div class="pod-info">
-                    <span class="pod-name" style="color: #74b9ff;">BLUE</span>
-                    <span class="pod-hint" id="hint-blue">WAIT</span>
-                </div>
-                <div class="pod-dice" id="dice-blue"></div>
+        <!-- নিচের ডাইস বক্স রো (You / Red এবং AI 3 / Blue) -->
+        <div class="player-pods-row" style="margin-top: 2px;">
+            <div class="player-pod-box active-turn" id="pod-red" onclick="handlePodClick('red')">
+                <div class="pod-pin-preview" id="pin-red"></div>
+                <div class="pod-dice-slot" id="dice-red"></div>
             </div>
 
-            <!-- Yellow Pod (Bottom Right) -->
-            <div class="player-pod" id="pod-yellow" onclick="handlePodDiceClick('yellow')">
-                <div class="pod-dice" id="dice-yellow"></div>
-                <div class="pod-info" style="text-align: right;">
-                    <span class="pod-name" style="color: #ffeaa7;">YELLOW</span>
-                    <span class="pod-hint" id="hint-yellow">WAIT</span>
-                </div>
-                <div class="pod-avatar" style="background: var(--c-yellow); color:#000;">🤠</div>
+            <div class="player-pod-box" id="pod-blue" onclick="handlePodClick('blue')">
+                <div class="pod-dice-slot" id="dice-blue"></div>
+                <div class="pod-pin-preview" id="pin-blue"></div>
             </div>
         </div>
 
@@ -237,11 +205,11 @@
             <button class="modal-btn" style="background:#3498db; color:#fff;" onclick="setGameMode('4p')">👨‍👩‍👧‍👦 4 PLAYERS (Pass & Play)</button>
         </div>
 
-        <!-- Win Modal -->
+        <!-- Win Final Modal -->
         <div id="win-modal" class="generic-modal">
             <div style="font-size: 36px; margin-bottom: 6px;">👑</div>
-            <div style="font-size: 18px; font-weight: 900; color: var(--gold);" id="win-title">CHAMPION!</div>
-            <div style="font-size: 12px; color: #ccc; margin-top: 4px;" id="win-desc">Winner reached home!</div>
+            <div style="font-size: 18px; font-weight: 900; color: var(--gold);" id="win-title">MATCH FINISHED!</div>
+            <div style="font-size: 12px; color: #ccc; margin-top: 4px; text-align: center;" id="win-desc">All positions determined!</div>
             <button class="modal-btn" onclick="openModeModal()">PLAY AGAIN</button>
         </div>
     </div>
@@ -255,8 +223,15 @@
         const COLORS = {
             red: '#e71d36',
             green: '#009b48',
-            yellow: '#cfa200',
-            blue: '#1e88e5'
+            yellow: '#ffeb3b',
+            blue: '#2196f3'
+        };
+
+        const PLAYER_NAMES = {
+            red: 'You',
+            green: 'AI 1',
+            yellow: 'AI 2',
+            blue: 'AI 3'
         };
 
         let activePlayers = ['red', 'green', 'yellow', 'blue'];
@@ -280,14 +255,8 @@
         const START_IDX = { red: 0, green: 13, yellow: 26, blue: 39 };
 
         const SAFE_STARS = [
-            [6, 1],  // Red Start
-            [8, 2],  // Red Safe
-            [1, 8],  // Green Start
-            [2, 6],  // Green Safe
-            [8, 13], // Yellow Start
-            [6, 12], // Yellow Safe
-            [13, 6], // Blue Start
-            [12, 8]  // Blue Safe
+            [6, 1], [8, 2], [1, 8], [2, 6],
+            [8, 13], [6, 12], [13, 6], [12, 8]
         ];
 
         const START_ARROWS = [
@@ -305,10 +274,10 @@
         };
 
         const BASE_SLOTS = {
-            red: [[1.6,1.6], [3.6,1.6], [1.6,3.6], [3.6,3.6]],
-            green: [[10.6,1.6], [12.6,1.6], [10.6,3.6], [12.6,3.6]],
-            yellow: [[10.6,10.6], [12.6,10.6], [10.6,12.6], [12.6,12.6]],
-            blue: [[1.6,10.6], [3.6,10.6], [1.6,12.6], [3.6,12.6]]
+            red: [[1.6,10.6], [3.6,10.6], [1.6,12.6], [3.6,12.6]],      // ছবির মতো রেড নিচে বাঁয়ে
+            green: [[1.6,1.6], [3.6,1.6], [1.6,3.6], [3.6,3.6]],         // গ্রিন উপরে বাঁয়ে
+            yellow: [[10.6,1.6], [12.6,1.6], [10.6,3.6], [12.6,3.6]],    // ইয়েলো উপরে ডানে
+            blue: [[10.6,10.6], [12.6,10.6], [10.6,12.6], [12.6,12.6]]   // ব্লু নিচে ডানে
         };
 
         let currentTurnIdx = 0;
@@ -323,70 +292,37 @@
             blue: [-1, -1, -1, -1]
         };
 
-        /* ------------------ সাউন্ড ইঞ্জিন ------------------ */
+        // মাল্টি-উইনার র‍্যাঙ্কিং সিস্টেম (১ম, ২য়, ৩য়)
+        let winnersOrder = []; 
+        let isCrownAnimating = false;
+
+        /* ------------------ সাউন্ড সিন্থেসাইজার ------------------ */
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        function playTone(freq, type, dur, gainVal = 0.1) {
+            try {
+                if (audioCtx.state === 'suspended') audioCtx.resume();
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = type; osc.frequency.value = freq;
+                gain.gain.setValueAtTime(gainVal, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + dur);
+                osc.connect(gain); gain.connect(audioCtx.destination);
+                osc.start(); osc.stop(audioCtx.currentTime + dur);
+            } catch(e){}
+        }
 
         function playDiceRollSound() {
-            try {
-                if (audioCtx.state === 'suspended') audioCtx.resume();
-                for (let i = 0; i < 7; i++) {
-                    setTimeout(() => {
-                        const osc = audioCtx.createOscillator();
-                        const gain = audioCtx.createGain();
-                        osc.type = 'triangle';
-                        osc.frequency.setValueAtTime(320 + Math.random() * 250, audioCtx.currentTime);
-                        gain.gain.setValueAtTime(0.12, audioCtx.currentTime);
-                        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.05);
-                        osc.connect(gain); gain.connect(audioCtx.destination);
-                        osc.start(); osc.stop(audioCtx.currentTime + 0.05);
-                    }, i * 55);
-                }
-            } catch(e){}
+            for (let i = 0; i < 6; i++) {
+                setTimeout(() => playTone(320 + Math.random() * 200, 'triangle', 0.05, 0.08), i * 55);
+            }
         }
-
-        function playTokenStepSound() {
-            try {
-                if (audioCtx.state === 'suspended') audioCtx.resume();
-                const osc = audioCtx.createOscillator();
-                const gain = audioCtx.createGain();
-                osc.type = 'sine';
-                osc.frequency.setValueAtTime(650, audioCtx.currentTime);
-                osc.frequency.exponentialRampToValueAtTime(320, audioCtx.currentTime + 0.07);
-                gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
-                gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.07);
-                osc.connect(gain); gain.connect(audioCtx.destination);
-                osc.start(); osc.stop(audioCtx.currentTime + 0.07);
-            } catch(e){}
-        }
-
-        function playCaptureSound() {
-            try {
-                if (audioCtx.state === 'suspended') audioCtx.resume();
-                const osc = audioCtx.createOscillator();
-                const gain = audioCtx.createGain();
-                osc.type = 'sawtooth';
-                osc.frequency.setValueAtTime(240, audioCtx.currentTime);
-                osc.frequency.linearRampToValueAtTime(100, audioCtx.currentTime + 0.28);
-                gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
-                gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.28);
-                osc.connect(gain); gain.connect(audioCtx.destination);
-                osc.start(); osc.stop(audioCtx.currentTime + 0.28);
-            } catch(e){}
-        }
-
-        function playHomeWinSound() {
-            try {
-                if (audioCtx.state === 'suspended') audioCtx.resume();
-                const osc = audioCtx.createOscillator();
-                const gain = audioCtx.createGain();
-                osc.type = 'sine';
-                osc.frequency.setValueAtTime(523.25, audioCtx.currentTime);
-                osc.frequency.setValueAtTime(659.25, audioCtx.currentTime + 0.1);
-                gain.gain.setValueAtTime(0.18, audioCtx.currentTime);
-                gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.25);
-                osc.connect(gain); gain.connect(audioCtx.destination);
-                osc.start(); osc.stop(audioCtx.currentTime + 0.25);
-            } catch(e){}
+        function playStepSound() { playTone(640, 'sine', 0.06, 0.1); }
+        function playCaptureSound() { playTone(240, 'sawtooth', 0.25, 0.18); }
+        function playCrownFanfare() {
+            const notes = [523.25, 659.25, 783.99, 1046.50];
+            notes.forEach((freq, idx) => {
+                setTimeout(() => playTone(freq, 'triangle', 0.35, 0.18), idx * 140);
+            });
         }
 
         function setHUD(text) {
@@ -395,15 +331,16 @@
             setTimeout(() => el.classList.remove('show'), 1600);
         }
 
-        /* ------------------ ক্যানভাস ড্রয়িং ------------------ */
+        /* ------------------ ক্যানভাস বোর্ড ড্রয়িং ------------------ */
         function drawBoard() {
             ctx.clearRect(0, 0, C_SIZE, C_SIZE);
 
+            // গ্রিড ব্যাকগ্রাউন্ড
             ctx.fillStyle = '#ffffff';
             ctx.fillRect(0, 0, C_SIZE, C_SIZE);
 
             ctx.strokeStyle = '#333333';
-            ctx.lineWidth = 1.4;
+            ctx.lineWidth = 1.2;
             for (let i = 0; i <= 15; i++) {
                 ctx.beginPath();
                 ctx.moveTo(i * CELL, 0); ctx.lineTo(i * CELL, C_SIZE);
@@ -411,6 +348,7 @@
                 ctx.stroke();
             }
 
+            // হোম পাথওয়ে
             for (let i = 1; i <= 5; i++) {
                 fillCell(7, i, COLORS.red);
                 fillCell(i, 7, COLORS.green);
@@ -418,20 +356,30 @@
                 fillCell(14 - i, 7, COLORS.blue);
             }
 
-            fillCell(6, 1, COLORS.red);
-            fillCell(1, 8, COLORS.green);
-            fillCell(8, 13, COLORS.yellow);
-            fillCell(13, 6, COLORS.blue);
+            // স্টার্টিং সেল
+            fillCell(8, 1, COLORS.red);
+            fillCell(1, 6, COLORS.green);
+            fillCell(6, 13, COLORS.yellow);
+            fillCell(13, 8, COLORS.blue);
 
-            drawBase(0, 0, COLORS.red, 'red');
-            drawBase(9 * CELL, 0, COLORS.green, 'green');
-            drawBase(9 * CELL, 9 * CELL, COLORS.yellow, 'yellow');
-            drawBase(0, 9 * CELL, COLORS.blue, 'blue');
+            // ৪টি কর্নার বেস (ছবি অনুসারে সাজানো)
+            drawBase(0, 9 * CELL, COLORS.red, 'red', 'You');
+            drawBase(0, 0, COLORS.green, 'green', 'AI 1');
+            drawBase(9 * CELL, 0, COLORS.yellow, 'yellow', 'AI 2');
+            drawBase(9 * CELL, 9 * CELL, COLORS.blue, 'blue', 'AI 3');
 
             drawCenterTriangle();
 
             SAFE_STARS.forEach(([r, c]) => drawOutlineStar(c * CELL + CELL / 2, r * CELL + CELL / 2));
             START_ARROWS.forEach(a => drawStartArrow(a.c * CELL + CELL / 2, a.r * CELL + CELL / 2, a.dir, a.col));
+
+            // সেন্টারের ৪টি ট্রায়াঙ্গেলের মুখে পৌঁছানো ঘুঁটির সংখ্যা দেখানো
+            drawHomeTrackTokensCount();
+
+            // বিজয়ী দলগুলোর বেসে ছবির মতো বিশাল মুকুট ও র‍্যাঙ্ক নম্বর
+            winnersOrder.forEach((win, index) => {
+                drawBaseCrown(win.color, index + 1);
+            });
 
             drawAllTokens();
         }
@@ -442,30 +390,38 @@
             ctx.strokeRect(c * CELL, r * CELL, CELL, CELL);
         }
 
-        function drawBase(x, y, color, playerKey) {
+        function drawBase(x, y, color, playerKey, label) {
             ctx.fillStyle = color;
             ctx.fillRect(x, y, 6 * CELL, 6 * CELL);
             ctx.strokeRect(x, y, 6 * CELL, 6 * CELL);
 
+            // ভেতরের সাদা প্যানেল
             ctx.fillStyle = '#ffffff';
             ctx.fillRect(x + CELL * 0.8, y + CELL * 0.8, 4.4 * CELL, 4.4 * CELL);
             ctx.strokeRect(x + CELL * 0.8, y + CELL * 0.8, 4.4 * CELL, 4.4 * CELL);
 
-            BASE_SLOTS[playerKey].forEach(([col, row]) => {
-                ctx.beginPath();
-                ctx.arc(col * CELL, row * CELL, CELL * 0.52, 0, Math.PI * 2);
-                ctx.fillStyle = color;
-                ctx.fill();
-                ctx.strokeStyle = '#000000';
-                ctx.lineWidth = 1.5;
-                ctx.stroke();
+            // বেসের নাম (You, AI 1, AI 2, AI 3)
+            ctx.fillStyle = '#ffffff';
+            ctx.font = 'bold 15px sans-serif';
+            ctx.textAlign = 'center';
+            if (y === 0) {
+                ctx.fillText(label, x + 3 * CELL, y + 20);
+            } else {
+                ctx.fillText(label, x + 3 * CELL, y + 6 * CELL - 8);
+            }
 
-                ctx.beginPath();
-                ctx.arc(col * CELL, row * CELL, CELL * 0.38, 0, Math.PI * 2);
-                ctx.fillStyle = '#ffffff';
-                ctx.fill();
-                ctx.stroke();
-            });
+            // যদি এই দল এখনো না জিতে থাকে তবে ৪টি রাউন্ড খাঁদ দেখাবে
+            if (!winnersOrder.some(w => w.color === playerKey)) {
+                BASE_SLOTS[playerKey].forEach(([col, row]) => {
+                    ctx.beginPath();
+                    ctx.arc(col * CELL, row * CELL, CELL * 0.44, 0, Math.PI * 2);
+                    ctx.fillStyle = color;
+                    ctx.fill();
+                    ctx.strokeStyle = '#222';
+                    ctx.lineWidth = 1.5;
+                    ctx.stroke();
+                });
+            }
         }
 
         function drawCenterTriangle() {
@@ -474,13 +430,71 @@
             const end = 9 * CELL;
 
             ctx.fillStyle = COLORS.red;
-            ctx.beginPath(); ctx.moveTo(start, start); ctx.lineTo(center, center); ctx.lineTo(start, end); ctx.fill(); ctx.stroke();
-            ctx.fillStyle = COLORS.green;
-            ctx.beginPath(); ctx.moveTo(start, start); ctx.lineTo(center, center); ctx.lineTo(end, start); ctx.fill(); ctx.stroke();
-            ctx.fillStyle = COLORS.yellow;
-            ctx.beginPath(); ctx.moveTo(end, start); ctx.lineTo(center, center); ctx.lineTo(end, end); ctx.fill(); ctx.stroke();
-            ctx.fillStyle = COLORS.blue;
             ctx.beginPath(); ctx.moveTo(start, end); ctx.lineTo(center, center); ctx.lineTo(end, end); ctx.fill(); ctx.stroke();
+            ctx.fillStyle = COLORS.green;
+            ctx.beginPath(); ctx.moveTo(start, start); ctx.lineTo(center, center); ctx.lineTo(start, end); ctx.fill(); ctx.stroke();
+            ctx.fillStyle = COLORS.yellow;
+            ctx.beginPath(); ctx.moveTo(start, start); ctx.lineTo(center, center); ctx.lineTo(end, start); ctx.fill(); ctx.stroke();
+            ctx.fillStyle = COLORS.blue;
+            ctx.beginPath(); ctx.moveTo(end, start); ctx.lineTo(center, center); ctx.lineTo(end, end); ctx.fill(); ctx.stroke();
+        }
+
+        /* সেন্টারের ৪টি ট্রায়াঙ্গেলের মুখে পৌঁছানো ঘুঁটির সংখ্যা দেখানো */
+        function drawHomeTrackTokensCount() {
+            const homeCounts = {
+                red: tokens.red.filter(p => p === 56).length,
+                green: tokens.green.filter(p => p === 56).length,
+                yellow: tokens.yellow.filter(p => p === 56).length,
+                blue: tokens.blue.filter(p => p === 56).length
+            };
+
+            // Red (Bottom Center)
+            drawCenterBadge(7.5 * CELL, 8.3 * CELL, COLORS.red, homeCounts.red);
+            // Green (Left Center)
+            drawCenterBadge(6.7 * CELL, 7.5 * CELL, COLORS.green, homeCounts.green);
+            // Yellow (Top Center)
+            drawCenterBadge(7.5 * CELL, 6.7 * CELL, COLORS.yellow, homeCounts.yellow);
+            // Blue (Right Center)
+            drawCenterBadge(8.3 * CELL, 7.5 * CELL, COLORS.blue, homeCounts.blue);
+        }
+
+        function drawCenterBadge(cx, cy, col, count) {
+            ctx.save();
+            ctx.fillStyle = 'rgba(0,0,0,0.7)';
+            ctx.beginPath(); ctx.arc(cx, cy, 11, 0, Math.PI * 2); ctx.fill();
+            ctx.strokeStyle = col; ctx.lineWidth = 1.5; ctx.stroke();
+
+            ctx.fillStyle = '#fff';
+            ctx.font = 'bold 11px sans-serif';
+            ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+            ctx.fillText(count, cx, cy);
+            ctx.restore();
+        }
+
+        /* ছবির মতো বেসে বিশাল গোল্ডেন ক্রাউন ও র‍্যাঙ্ক নম্বর */
+        function drawBaseCrown(color, rank) {
+            let cx, cy;
+            if (color === 'red') { cx = 3 * CELL; cy = 12 * CELL; }
+            else if (color === 'green') { cx = 3 * CELL; cy = 3 * CELL; }
+            else if (color === 'yellow') { cx = 12 * CELL; cy = 3 * CELL; }
+            else { cx = 12 * CELL; cy = 12 * CELL; }
+
+            ctx.save();
+            // গোল্ডেন গ্লো শ্যাডো
+            ctx.shadowColor = 'rgba(255, 215, 0, 0.9)';
+            ctx.shadowBlur = 16;
+
+            // ক্রাউন আর্ট
+            ctx.font = '72px sans-serif';
+            ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+            ctx.fillText('👑', cx, cy - 6);
+
+            // কালো বোল্ড র‍্যাঙ্ক নম্বর
+            ctx.shadowColor = 'transparent';
+            ctx.fillStyle = '#000000';
+            ctx.font = '900 42px system-ui, sans-serif';
+            ctx.fillText(rank, cx, cy + 8);
+            ctx.restore();
         }
 
         function drawOutlineStar(cx, cy) {
@@ -488,8 +502,7 @@
             ctx.strokeStyle = '#222222';
             ctx.lineWidth = 2;
             ctx.font = '26px sans-serif';
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
+            ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
             ctx.strokeText('☆', cx, cy);
             ctx.restore();
         }
@@ -497,15 +510,17 @@
         function drawStartArrow(cx, cy, symbol, col) {
             ctx.save();
             ctx.fillStyle = col;
-            ctx.font = 'bold 24px sans-serif';
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
+            ctx.font = 'bold 22px sans-serif';
+            ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
             ctx.fillText(symbol, cx, cy);
             ctx.restore();
         }
 
         function drawAllTokens() {
             activePlayers.forEach(color => {
+                // যারা জিতে গেছে তাদের ঘুঁটি আর বোর্ডে থাকবে না
+                if (winnersOrder.some(w => w.color === color)) return;
+
                 tokens[color].forEach((pos, idx) => {
                     if (pos === 56) return;
                     const coords = getTokenPixelPos(color, pos, idx);
@@ -529,15 +544,17 @@
             return { x: 7.5 * CELL, y: 7.5 * CELL };
         }
 
+        /* ছবির মতো বড় আকারের মেটালিক পিন-হেড ঘুঁটি */
         function drawPinToken(x, y, color, isCurrentPlayer) {
             ctx.save();
             y = y - 6;
 
             ctx.beginPath();
-            ctx.ellipse(x + 3, y + 20, 11, 5.5, 0, 0, Math.PI * 2);
+            ctx.ellipse(x + 2, y + 20, 11, 5.5, 0, 0, Math.PI * 2);
             ctx.fillStyle = 'rgba(0,0,0,0.38)';
             ctx.fill();
 
+            // পিন বডি
             ctx.beginPath();
             ctx.arc(x, y, 14.5, Math.PI * 0.8, Math.PI * 0.2, false);
             ctx.lineTo(x, y + 20);
@@ -549,6 +566,7 @@
             ctx.strokeStyle = '#222222';
             ctx.stroke();
 
+            // সেন্ট্রাল কালার ক্রিস্টাল
             ctx.beginPath();
             ctx.arc(x, y, 9.5, 0, Math.PI * 2);
             ctx.fillStyle = color;
@@ -572,54 +590,73 @@
             ctx.restore();
         }
 
-        /* ------------------ প্লেয়ার পড ডাইস গ্রাফিক্স ------------------ */
-        function renderDiceOnPod(color, val) {
-            const d = document.getElementById(`dice-${color}`);
-            if (!d) return;
-            d.innerHTML = '';
-            let pips = [];
-            if (val === 1) pips = [4];
-            else if (val === 2) pips = [0, 8];
-            else if (val === 3) pips = [0, 4, 8];
-            else if (val === 4) pips = [0, 2, 6, 8];
-            else if (val === 5) pips = [0, 2, 4, 6, 8];
-            else if (val === 6) pips = [0, 2, 3, 5, 6, 8];
-
-            for (let i = 0; i < 9; i++) {
-                if (pips.includes(i)) {
-                    const pip = document.createElement('div');
-                    pip.className = 'pip';
-                    if (val === 1) pip.classList.add('red-pip');
-                    d.appendChild(pip);
-                } else {
-                    d.appendChild(document.createElement('div'));
-                }
-            }
+        /* ------------------ পিন প্রিভিউ ও ডাইস রেন্ডারিং ------------------ */
+        function renderPodPreviewPins() {
+            ['red', 'green', 'yellow', 'blue'].forEach(col => {
+                const el = document.getElementById(`pin-${col}`);
+                if (!el) return;
+                el.innerHTML = `
+                    <svg viewBox="0 0 32 36" width="28" height="32">
+                        <path d="M16 2 A 12 12 0 0 0 5 18 L 16 34 L 27 18 A 12 12 0 0 0 16 2 Z" fill="#fff" stroke="#111" stroke-width="2"/>
+                        <circle cx="16" cy="14" r="8" fill="${COLORS[col]}" stroke="#000" stroke-width="1.2"/>
+                        <circle cx="14" cy="12" r="2.5" fill="rgba(255,255,255,0.8)"/>
+                    </svg>
+                `;
+            });
         }
 
-        function updatePodUI() {
+        function renderDiceOnPod(color, val) {
+            ['red', 'green', 'yellow', 'blue'].forEach(col => {
+                const d = document.getElementById(`dice-${col}`);
+                if (!d) return;
+                if (col === color) {
+                    d.className = 'pod-dice-slot';
+                    d.innerHTML = '';
+                    let pips = [];
+                    if (val === 1) pips = [4];
+                    else if (val === 2) pips = [0, 8];
+                    else if (val === 3) pips = [0, 4, 8];
+                    else if (val === 4) pips = [0, 2, 6, 8];
+                    else if (val === 5) pips = [0, 2, 4, 6, 8];
+                    else if (val === 6) pips = [0, 2, 3, 5, 6, 8];
+
+                    for (let i = 0; i < 9; i++) {
+                        if (pips.includes(i)) {
+                            const pip = document.createElement('div');
+                            pip.className = 'pip';
+                            if (val === 1) pip.classList.add('red-pip');
+                            d.appendChild(pip);
+                        } else {
+                            d.appendChild(document.createElement('div'));
+                        }
+                    }
+                } else {
+                    d.className = 'pod-dice-slot empty';
+                    d.innerHTML = '';
+                }
+            });
+        }
+
+        function updatePodTurnUI() {
+            const activeColor = activePlayers[currentTurnIdx];
             ['red', 'green', 'yellow', 'blue'].forEach(col => {
                 const pod = document.getElementById(`pod-${col}`);
-                const hint = document.getElementById(`hint-${col}`);
-                const isCurrent = (col === activePlayers[currentTurnIdx]);
-
-                if (isCurrent) {
+                if (!pod) return;
+                if (col === activeColor) {
                     pod.classList.add('active-turn');
-                    hint.innerText = isHumanTurn() ? "TAP DICE" : "THINKING...";
                 } else {
                     pod.classList.remove('active-turn');
-                    hint.innerText = "WAIT";
                 }
             });
         }
 
         function isHumanTurn() {
             if (gameMode === '2p' || gameMode === '4p') return true;
-            return currentTurnIdx === 0;
+            return activePlayers[currentTurnIdx] === 'red';
         }
 
-        function handlePodDiceClick(color) {
-            if (!canRoll || isMoving) return;
+        function handlePodClick(color) {
+            if (!canRoll || isMoving || isCrownAnimating) return;
             if (color !== activePlayers[currentTurnIdx]) return;
             if (!isHumanTurn()) return;
             rollDice();
@@ -640,7 +677,7 @@
                 const validMoves = getMovableTokens(color, diceVal);
 
                 if (validMoves.length === 0) {
-                    setHUD(`${color.toUpperCase()} has no moves`);
+                    setHUD(`${PLAYER_NAMES[color]} has no moves`);
                     setTimeout(nextTurn, 800);
                 } else if (validMoves.length === 1 && isHumanTurn()) {
                     moveToken(color, validMoves[0]);
@@ -663,7 +700,7 @@
         }
 
         canvas.addEventListener('click', (e) => {
-            if (!isHumanTurn() || canRoll || isMoving) return;
+            if (!isHumanTurn() || canRoll || isMoving || isCrownAnimating) return;
             const rect = canvas.getBoundingClientRect();
             const scaleX = canvas.width / rect.width;
             const scaleY = canvas.height / rect.height;
@@ -685,6 +722,7 @@
             }
         });
 
+        /* ------------------ চাল ও মাল্টি-উইনার অ্যানিমেশন ------------------ */
         function moveToken(color, idx) {
             isMoving = true;
             let cur = tokens[color][idx];
@@ -692,15 +730,14 @@
 
             if (cur === -1 && diceVal === 6) {
                 tokens[color][idx] = 0;
-                playTokenStepSound();
+                playStepSound();
             } else {
                 tokens[color][idx] += diceVal;
-                playTokenStepSound();
+                playStepSound();
 
                 if (tokens[color][idx] === 56) {
                     gainedBonusTurn = true;
-                    playHomeWinSound();
-                    setHUD(`${color.toUpperCase()} reached Home! (+1 Bonus)`);
+                    setHUD(`${PLAYER_NAMES[color]} token reached Home!`);
                 }
             }
 
@@ -712,8 +749,9 @@
 
                 isMoving = false;
 
+                // চেক করুন এই খেলোয়াড়ের ৪টি ঘুঁটিই হোম হয়েছে কিনা
                 if (tokens[color].every(p => p === 56)) {
-                    showWinModal(color);
+                    handlePlayerWin(color);
                     return;
                 }
 
@@ -721,7 +759,7 @@
                     canRoll = true;
                     if (gainedBonusTurn && diceVal !== 6) setHUD("Bonus Turn! Roll Again");
                     else if (diceVal === 6) setHUD("Rolled 6! Roll Again");
-                    
+
                     if (!isHumanTurn()) setTimeout(rollDice, 800);
                 } else {
                     nextTurn();
@@ -749,7 +787,7 @@
                         if (oppTrackIdx === myTrackIdx) {
                             tokens[opp][oppIdx] = -1;
                             playCaptureSound();
-                            setHUD(`${color.toUpperCase()} Captured ${opp.toUpperCase()}! (+1 Bonus)`);
+                            setHUD(`${PLAYER_NAMES[color]} Captured ${PLAYER_NAMES[opp]}! (+1 Bonus)`);
                             drawBoard();
                             didCapture = true;
                         }
@@ -760,13 +798,47 @@
             return didCapture;
         }
 
+        /* ৫ সেকেন্ডের বিশেষ মুকুট অ্যানিমেশন এবং পরবর্তী পজিশনের লড়াই */
+        function handlePlayerWin(color) {
+            isCrownAnimating = true;
+            const rank = winnersOrder.length + 1;
+            winnersOrder.push({ color, rank });
+            playCrownFanfare();
+
+            const rankSuffix = (rank === 1 ? '1ST' : (rank === 2 ? '2ND' : '3RD'));
+            setHUD(`👑 ${PLAYER_NAMES[color].toUpperCase()} SECURED ${rankSuffix} POSITION!`);
+
+            // বেসে মুকুট ড্র
+            drawBoard();
+
+            // ৫ সেকেন্ড অ্যানিমেশন প্রদর্শন
+            setTimeout(() => {
+                isCrownAnimating = false;
+
+                // খেলোয়াড় তালিকা থেকে বিজয়ী রঙকে বাদ দিয়ে পরবর্তী প্রতিযোগীদের মধ্যে খেলা জারি রাখা
+                activePlayers = activePlayers.filter(c => c !== color);
+
+                // যদি মাত্র ১ জন বাকি থাকে তবে খেলা সম্পূর্ণ শেষ
+                if (activePlayers.length <= 1) {
+                    showFinalGameSummary();
+                } else {
+                    // অবশিষ্ট ৩ জন বা ২ জনের মধ্যে লড়াই অব্যাহত থাকবে
+                    if (currentTurnIdx >= activePlayers.length) currentTurnIdx = 0;
+                    setHUD(`Battle continues for next position!`);
+                    nextTurn();
+                }
+            }, 5000);
+        }
+
         function nextTurn() {
+            if (activePlayers.length === 0) return;
             currentTurnIdx = (currentTurnIdx + 1) % activePlayers.length;
             const color = activePlayers[currentTurnIdx];
-            document.getElementById('turn-indicator').innerText = `${color.toUpperCase()}'S TURN`;
+            document.getElementById('turn-indicator').innerText = `${PLAYER_NAMES[color].toUpperCase()}'S TURN`;
             canRoll = true;
 
-            updatePodUI();
+            updatePodTurnUI();
+            renderDiceOnPod(color, 1);
             drawBoard();
 
             if (!isHumanTurn()) {
@@ -774,9 +846,10 @@
             }
         }
 
-        function showWinModal(color) {
-            document.getElementById('win-title').innerText = `${color.toUpperCase()} WON! 👑`;
-            document.getElementById('win-desc').innerText = `Congratulations! All tokens reached home.`;
+        function showFinalGameSummary() {
+            let summaryText = winnersOrder.map(w => `#${w.rank}: ${PLAYER_NAMES[w.color]}`).join(' | ');
+            document.getElementById('win-title').innerText = `MATCH COMPLETED! 👑`;
+            document.getElementById('win-desc').innerText = summaryText;
             document.getElementById('win-modal').style.display = 'flex';
         }
 
@@ -791,28 +864,37 @@
 
             if (mode === '2p') {
                 activePlayers = ['red', 'yellow'];
-                document.getElementById('pod-green').style.display = 'none';
-                document.getElementById('pod-blue').style.display = 'none';
+                document.getElementById('pod-green').style.opacity = '0.3';
+                document.getElementById('pod-blue').style.opacity = '0.3';
             } else {
                 activePlayers = ['red', 'green', 'yellow', 'blue'];
-                document.getElementById('pod-green').style.display = 'flex';
-                document.getElementById('pod-blue').style.display = 'flex';
+                document.getElementById('pod-green').style.opacity = '1';
+                document.getElementById('pod-blue').style.opacity = '1';
             }
 
+            winnersOrder = [];
             currentTurnIdx = 0;
             canRoll = true;
             isMoving = false;
-            tokens = { red: [-1,-1,-1,-1], green: [-1,-1,-1,-1], yellow: [-1,-1,-1,-1], blue: [-1,-1,-1,-1] };
-            
-            ['red', 'green', 'yellow', 'blue'].forEach(col => renderDiceOnPod(col, 1));
-            document.getElementById('turn-indicator').innerText = `${activePlayers[0].toUpperCase()}'S TURN`;
-            
-            updatePodUI();
+            isCrownAnimating = false;
+
+            tokens = {
+                red: [-1, -1, -1, -1],
+                green: [-1, -1, -1, -1],
+                yellow: [-1, -1, -1, -1],
+                blue: [-1, -1, -1, -1]
+            };
+
+            const firstColor = activePlayers[0];
+            document.getElementById('turn-indicator').innerText = `${PLAYER_NAMES[firstColor].toUpperCase()}'S TURN`;
+            renderDiceOnPod(firstColor, 1);
+            updatePodTurnUI();
             drawBoard();
         }
 
         window.onload = () => {
-            ['red', 'green', 'yellow', 'blue'].forEach(col => renderDiceOnPod(col, 1));
+            renderPodPreviewPins();
+            renderDiceOnPod('red', 1);
             openModeModal();
         };
     </script>
